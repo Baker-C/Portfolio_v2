@@ -1,0 +1,46 @@
+---
+description: Animation approach for this project (Framer Motion + styled-components)
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Animations
+
+This project uses **Framer Motion** for component-level animations, combined with the existing **styled-components** setup.
+
+## Pattern: Wrap styled components with motion()
+
+Use `motion(YourStyledComponent)` so the component keeps all theme and styles and also accepts Framer Motion props (`initial`, `animate`, `transition`, `variants`, etc.).
+
+```tsx
+import { motion } from 'framer-motion';
+import styled from 'styled-components';
+
+const FancyTitle = styled.h1`
+  font-family: ${props => props.theme.fonts.families.fancy};
+  /* ... */
+`;
+
+const MotionFancyTitle = motion(FancyTitle);
+
+// Use the motion version where you want animation
+<MotionFancyTitle
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5 }}
+>
+  Software
+</MotionFancyTitle>
+```
+
+## Guidelines
+
+- **Keep animations in the component**: Define `initial` / `animate` / `transition` (or `variants`) where the component is used; no shared animation library required.
+- **Use the non-motion styled component** when you don't need animation; use the `motion(...)` version only where you do.
+- **Transient props**: Styled components that take props for styling should keep using the `$` prefix (e.g. `$active`) so they don't conflict with motion or DOM.
+- **CSS-only effects**: For simple hover/active or small repeated effects (e.g. tile pulse), keep using styled-components `keyframes` and `transition` in the component file; no need to use Framer Motion for those.
+
+## Don't
+
+- Don't add a global animation keyframes/theme system for reuse unless the project starts to need it.
+- Don't pass Framer Motion animation props to the raw styled component; use the `motion(...)` wrapper for that element.

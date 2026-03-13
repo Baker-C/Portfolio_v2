@@ -1,0 +1,13 @@
+/* Named CSS module classes - use with createStyles(styles.*) */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.readTheDocs {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
