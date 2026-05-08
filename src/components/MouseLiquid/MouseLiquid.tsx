@@ -1,37 +1,53 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { FluidDynamicSolver } from './fluidSolver';
+import { subscribeGlobalTempus } from '@/utils/tempusTicker';
 
 const OVERFLOW_CELLS = 12;
 
 // ——— Halftone / dot size (tweak these) ———
 /** Pixel size of each grid cell (and max dot diameter). Larger = bigger, chunkier dots. */
 const CELL_SIZE_PX = 20;
-/** Max dot radius as fraction of half-cell (0–1). 0.95 = nearly touch cell edges. */
-const DOT_RADIUS_SCALE = 0.6;
-/** When density >= MOVEMENT_THRESHOLD, dot radius is multiplied by this (e.g. 0.5 = half). */
-const MOVEMENT_RADIUS_SCALE = 1.1;
-/** Don't draw dots smaller than this radius (px). */
-const MIN_DOT_RADIUS = 0;
 /** Luminance at or below this (0–1): no dot, solid black. Lower = more dark area becomes solid black. */
-const MIN_DOT_THRESHOLD = 0.05;
-/** Density above this triggers "movement" (dot radius uses MOVEMENT_RADIUS_SCALE). */
+const MIN_DOT_THRESHOLD = 0.2;
+/** Density above this triggers "movement" threshold behavior. */
 const MOVEMENT_THRESHOLD = 0.01;
-/** Idle sub-grid: 3x3 = 9 squares per cell. */
-const SUB_GRID_SIZE = 3;
-/** Precomputed sub-cell center ratios from cell center (-0.5..0.5). For 3x3: -1/3, 0, 1/3. */
-const SUB_OFFSET_RATIOS: [number, number][] = (() => {
+/** Active cells shrink dot size by this multiplier. */
+const ACTIVE_DOT_SIZE_MULTIPLIER = 0.6;
+/** Dot size scaling: luminance >= 0.9 => full sub-cell size. */
+const DOT_SIZE_MAX_LUMINANCE = 0.9;
+/** Dot size scaling: luminance <= 0.3 => minimum sub-cell size. */
+const DOT_SIZE_MIN_LUMINANCE = 0.3;
+/** Minimum dot size ratio relative to sub-cell size. */
+const MIN_DOT_SIZE_RATIO = 0.25;
+/** Maximum dot size ratio relative to sub-cell size. */
+const MAX_DOT_SIZE_RATIO = 1.2;
+/** Idle cells use this sub-grid size. */
+const IDLE_SUB_GRID_SIZE = 6;
+/** Active cells (mouse liquid affected) use this sub-grid size. */
+const ACTIVE_SUB_GRID_SIZE = 2;
+/** Sampling grid for luminance lookups (highest required sub-grid resolution). */
+const LUM_SAMPLE_GRID_SIZE = Math.max(IDLE_SUB_GRID_SIZE, ACTIVE_SUB_GRID_SIZE);
+
+function centerSubIndexForSize(size: number): number {
+  return Math.floor((size - 1) / 2);
+}
+
+/** Precomputed sub-cell center ratios from cell center (-0.5..0.5). */
+function buildSubOffsetRatios(size: number): [number, number][] {
   const r: [number, number][] = [];
-  for (let sy = 0; sy < SUB_GRID_SIZE; sy++) {
-    for (let sx = 0; sx < SUB_GRID_SIZE; sx++) {
+  for (let sy = 0; sy < size; sy++) {
+    for (let sx = 0; sx < size; sx++) {
       r.push([
-        (2 * sx + 1) / (2 * SUB_GRID_SIZE) - 0.5,
-        (2 * sy + 1) / (2 * SUB_GRID_SIZE) - 0.5,
+        (2 * sx + 1) / (2 * size) - 0.5,
+        (2 * sy + 1) / (2 * size) - 0.5,
       ]);
     }
   }
   return r;
-})();
+}
+const IDLE_SUB_OFFSET_RATIOS = buildSubOffsetRatios(IDLE_SUB_GRID_SIZE);
+const ACTIVE_SUB_OFFSET_RATIOS = buildSubOffsetRatios(ACTIVE_SUB_GRID_SIZE);
 // ———
 
 const VIDEO_EXTENSIONS = /\.(webm|mp4|mov|ogg|ogv|m4v)(\?|$)/i;
@@ -41,6 +57,13 @@ function isVideoUrl(url: string): boolean {
 }
 
 type DefaultMedia = HTMLImageElement | HTMLVideoElement;
+type FluidStateSnapshot = {
+  col: number;
+  row: number;
+  dNext: Float32Array;
+  uNext: Float32Array;
+  vNext: Float32Array;
+};
 
 function loadMedia(url: string): Promise<DefaultMedia> {
   return new Promise((resolve, reject) => {
@@ -57,6 +80,7 @@ function loadMedia(url: string): Promise<DefaultMedia> {
       video.play().catch(() => {});
     } else {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error(`Image load failed: ${url}`));
       img.src = url;
@@ -92,8 +116,8 @@ const DEFAULT_CONTROL: Required<MouseLiquidControlOptions> = {
   drawVelocity: false,
   drawVelocityScale: 1,
   emitVelocity: true,
-  emitVelocityScale: 1,
-  emitVelocityExpand: 1,
+  emitVelocityScale: 1.8,
+  emitVelocityExpand: 0,
 };
 
 function mergeControl(control?: { options?: MouseLiquidControlOptions }): Required<MouseLiquidControlOptions> {
@@ -168,8 +192,8 @@ function parseRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 }
 
-/** Fill a square in the RGBA buffer (used for batched putImageData). */
-function fillRectInBuffer(
+/** Fill a diamond in the RGBA buffer (used for batched putImageData). */
+function fillDiamondInBuffer(
   data: Uint8ClampedArray,
   cw: number,
   ch: number,
@@ -180,13 +204,19 @@ function fillRectInBuffer(
   g: number,
   b: number
 ) {
-  const x0 = Math.max(0, (cx - halfSize) | 0);
-  const y0 = Math.max(0, (cy - halfSize) | 0);
-  const x1 = Math.min(cw, (cx + halfSize) | 0);
-  const y1 = Math.min(ch, (cy + halfSize) | 0);
+  const h = Math.max(0, halfSize);
+  const x0 = Math.max(0, (cx - h) | 0);
+  const y0 = Math.max(0, (cy - h) | 0);
+  const x1 = Math.min(cw, (cx + h + 1) | 0);
+  const y1 = Math.min(ch, (cy + h + 1) | 0);
   for (let y = y0; y < y1; y++) {
+    const dy = Math.abs(y + 0.5 - cy);
+    const maxDx = h - dy;
+    if (maxDx <= 0) continue;
+    const startX = Math.max(x0, Math.floor(cx - maxDx));
+    const endX = Math.min(x1, Math.ceil(cx + maxDx));
     const row = y * cw;
-    for (let x = x0; x < x1; x++) {
+    for (let x = startX; x < endX; x++) {
       const i = (row + x) << 2;
       data[i] = r;
       data[i + 1] = g;
@@ -194,6 +224,15 @@ function fillRectInBuffer(
       data[i + 3] = 255;
     }
   }
+}
+
+function getDotSizeRatioFromLuminance(lum: number): number {
+  if (lum <= DOT_SIZE_MIN_LUMINANCE) return MIN_DOT_SIZE_RATIO;
+  if (lum >= DOT_SIZE_MAX_LUMINANCE) return MAX_DOT_SIZE_RATIO;
+  const t =
+    (lum - DOT_SIZE_MIN_LUMINANCE) /
+    (DOT_SIZE_MAX_LUMINANCE - DOT_SIZE_MIN_LUMINANCE);
+  return MIN_DOT_SIZE_RATIO + t * (MAX_DOT_SIZE_RATIO - MIN_DOT_SIZE_RATIO);
 }
 
 export function MouseLiquid({
@@ -206,6 +245,7 @@ export function MouseLiquid({
   const ctrl = useMemo(() => mergeControl(controlProp), [controlProp]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [measuredSize, setMeasuredSize] = useState({ w: 0, h: 0 });
+  const [isInViewport, setIsInViewport] = useState(true);
 
   const width = measuredSize.w;
   const height = measuredSize.h;
@@ -223,6 +263,27 @@ export function MouseLiquid({
     return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        setIsInViewport(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '10% 0px 10% 0px',
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const innerCol = Math.max(1, Math.floor(width / CELL_SIZE_PX));
   const innerRow = Math.max(1, Math.floor(height / CELL_SIZE_PX));
   const col = innerCol + 2 * OVERFLOW_CELLS;
@@ -238,8 +299,8 @@ export function MouseLiquid({
   const uUiRef = useRef<Float32Array | null>(null);
   const vUiRef = useRef<Float32Array | null>(null);
   const lastRef = useRef<{ x: number; y: number } | null>(null);
-  const lastTimeRef = useRef<number | null>(null);
   const imageDataRef = useRef<ImageData | null>(null);
+  const fluidStateSnapshotRef = useRef<FluidStateSnapshot | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -259,6 +320,7 @@ export function MouseLiquid({
       cancelled = true;
       mediaRef.current = null;
       setMediaReady(false);
+      fluidStateSnapshotRef.current = null;
       if (media instanceof HTMLVideoElement) {
         media.pause();
         media.removeAttribute('src');
@@ -267,7 +329,7 @@ export function MouseLiquid({
   }, [image]);
 
   useEffect(() => {
-    if (!gridSize || !mediaReady) return;
+    if (!gridSize || !mediaReady || !isInViewport) return;
     const wrapper = wrapperRef.current;
     const canvas = canvasRef.current;
     const media = mediaRef.current;
@@ -281,6 +343,12 @@ export function MouseLiquid({
     dUiRef.current = fluid.reset(new Float32Array(size));
     uUiRef.current = fluid.reset(new Float32Array(size));
     vUiRef.current = fluid.reset(new Float32Array(size));
+    const snapshot = fluidStateSnapshotRef.current;
+    if (snapshot && snapshot.col === col && snapshot.row === row) {
+      fluid.set(fluid.d_next, snapshot.dNext);
+      fluid.set(fluid.u_next, snapshot.uNext);
+      fluid.set(fluid.v_next, snapshot.vNext);
+    }
 
     const ctx = canvasEl.getContext('2d');
     if (!ctx) return;
@@ -292,12 +360,16 @@ export function MouseLiquid({
     canvasEl.height = canvasH;
 
     // Small luminance buffer: one pixel per sub-cell to minimize getImageData cost
-    const lumWidth = col * SUB_GRID_SIZE;
-    const lumHeight = row * SUB_GRID_SIZE;
+    const lumWidth = col * LUM_SAMPLE_GRID_SIZE;
+    const lumHeight = row * LUM_SAMPLE_GRID_SIZE;
     const lumCanvas = document.createElement('canvas');
     lumCanvas.width = lumWidth;
     lumCanvas.height = lumHeight;
-    const lumCtx = lumCanvas.getContext('2d')!;
+    // Hint for repeated getImageData after drawImage (video frames); improves readback path in Chromium.
+    const lum2dOrNull = lumCanvas.getContext('2d', { willReadFrequently: true });
+    if (!lum2dOrNull) return;
+    // Separate binding so the inner `onFrame` closure is typed (narrowing is not applied inside nested functions)
+    const ctxLum: CanvasRenderingContext2D = lum2dOrNull;
 
     function pointerMoveHandle(clientX: number, clientY: number) {
       const rect = canvasEl.getBoundingClientRect();
@@ -309,51 +381,72 @@ export function MouseLiquid({
 
       const tileW = CELL_SIZE_PX;
       const tileH = CELL_SIZE_PX;
-      const tileX = Math.max(1, Math.min(col, ((x / tileW) | 0) + 1));
-      const tileY = Math.max(1, Math.min(row, ((y / tileH) | 0) + 1));
       const last = lastRef.current;
       const d_ui = dUiRef.current;
       const u_ui = uUiRef.current;
       const v_ui = vUiRef.current;
       if (!d_ui || !u_ui || !v_ui) return;
 
-      if (last !== null) {
-        const deltaX = x - last.x;
-        const deltaY = y - last.y;
+      const stampAt = (
+        stampX: number,
+        stampY: number,
+        velX: number,
+        velY: number,
+        densityAmount: number
+      ) => {
+        const stampTileX = Math.max(1, Math.min(col, ((stampX / tileW) | 0) + 1));
+        const stampTileY = Math.max(1, Math.min(row, ((stampY / tileH) | 0) + 1));
 
         if (ctrl.emitDensity) {
           for (
-            let i = Math.max(1, tileX - ctrl.emitDensityExpand);
-            i <= Math.min(tileX + ctrl.emitDensityExpand, col);
+            let i = Math.max(1, stampTileX - ctrl.emitDensityExpand);
+            i <= Math.min(stampTileX + ctrl.emitDensityExpand, col);
             i++
           ) {
             for (
-              let j = Math.max(1, tileY - ctrl.emitDensityExpand);
-              j <= Math.min(tileY + ctrl.emitDensityExpand, row);
+              let j = Math.max(1, stampTileY - ctrl.emitDensityExpand);
+              j <= Math.min(stampTileY + ctrl.emitDensityExpand, row);
               j++
             ) {
-              d_ui[fluid.idx(i, j)] +=
-                Math.sqrt(deltaX * deltaX + deltaY * deltaY) *
-                ctrl.emitDensityScale;
+              d_ui[fluid.idx(i, j)] += densityAmount * ctrl.emitDensityScale;
             }
           }
         }
 
         if (ctrl.emitVelocity) {
           for (
-            let i = Math.max(1, tileX - ctrl.emitVelocityExpand);
-            i <= Math.min(tileX + ctrl.emitVelocityExpand, col);
+            let i = Math.max(1, stampTileX - ctrl.emitVelocityExpand);
+            i <= Math.min(stampTileX + ctrl.emitVelocityExpand, col);
             i++
           ) {
             for (
-              let j = Math.max(1, tileY - ctrl.emitVelocityExpand);
-              j <= Math.min(tileY + ctrl.emitVelocityExpand, row);
+              let j = Math.max(1, stampTileY - ctrl.emitVelocityExpand);
+              j <= Math.min(stampTileY + ctrl.emitVelocityExpand, row);
               j++
             ) {
-              u_ui[fluid.idx(i, j)] += deltaX * ctrl.emitVelocityScale;
-              v_ui[fluid.idx(i, j)] += deltaY * ctrl.emitVelocityScale;
+              u_ui[fluid.idx(i, j)] += velX * ctrl.emitVelocityScale;
+              v_ui[fluid.idx(i, j)] += velY * ctrl.emitVelocityScale;
             }
           }
+        }
+      };
+
+      if (last !== null) {
+        const deltaX = x - last.x;
+        const deltaY = y - last.y;
+        const moveLen = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        // Path stamping: split long pointer jumps so fast moves paint a continuous trail.
+        const stampSpacing = Math.max(1, Math.min(tileW, tileH) * 0.5);
+        const steps = Math.max(1, Math.min(16, Math.ceil(moveLen / stampSpacing)));
+        const perStepDensity = steps > 0 ? moveLen / steps : 0;
+        const perStepVelX = steps > 0 ? deltaX / steps : 0;
+        const perStepVelY = steps > 0 ? deltaY / steps : 0;
+
+        for (let step = 1; step <= steps; step++) {
+          const t = step / steps;
+          const stampX = last.x + deltaX * t;
+          const stampY = last.y + deltaY * t;
+          stampAt(stampX, stampY, perStepVelX, perStepVelY, perStepDensity);
         }
       }
 
@@ -374,28 +467,26 @@ export function MouseLiquid({
       pointerMoveHandle(clientX, clientY);
     };
 
-    const onMouseMove = (e: MouseEvent) => onPointer(e.clientX, e.clientY);
-    const onTouchMove = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      if (touch) onPointer(touch.clientX, touch.clientY);
+    // Listen on window so the effect still reacts when overlaying elements sit above the canvas.
+    const onPointerMove = (e: PointerEvent) => onPointer(e.clientX, e.clientY);
+    const onPointerLeave = () => {
+      lastRef.current = null;
     };
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerleave', onPointerLeave);
 
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
-
-    let rafId: number;
-    function loop() {
+    function onFrame(_time: number, deltaTimeMs: number) {
       const fluid = fluidRef.current;
       const d_ui = dUiRef.current;
       const u_ui = uUiRef.current;
       const v_ui = vUiRef.current;
       if (!fluid || !d_ui || !u_ui || !v_ui) return;
 
-      const now = performance.now();
-      const dt = lastTimeRef.current
-        ? Math.min((now - lastTimeRef.current) / 1000, 1 / 30)
-        : 1 / 60;
-      lastTimeRef.current = now;
+      // Tempus `deltaTime` is ms; first frame can be 0
+      const dt =
+        deltaTimeMs > 0
+          ? Math.min(deltaTimeMs / 1000, 1 / 30)
+          : 1 / 60;
 
       fluid.set(fluid.d_prev, d_ui);
       fluid.set(fluid.u_prev, u_ui);
@@ -406,13 +497,11 @@ export function MouseLiquid({
       const cw = canvasEl.width;
       const ch = canvasEl.height;
       if (cw === 0 || ch === 0) {
-        rafId = requestAnimationFrame(loop);
         return;
       }
 
       const currentMedia = mediaRef.current;
       if (!currentMedia) {
-        rafId = requestAnimationFrame(loop);
         return;
       }
 
@@ -421,15 +510,20 @@ export function MouseLiquid({
       const d = fluid.d_next;
 
       // 1) Draw media to small luminance buffer (one pixel per sub-cell) for fast getImageData
-      lumCtx.fillStyle = backgroundColor;
-      lumCtx.fillRect(0, 0, lumWidth, lumHeight);
-      drawMediaCover(lumCtx, currentMedia, lumWidth, lumHeight);
-      const lumData = lumCtx.getImageData(0, 0, lumWidth, lumHeight).data;
+      ctxLum.fillStyle = backgroundColor;
+      ctxLum.fillRect(0, 0, lumWidth, lumHeight);
+      drawMediaCover(ctxLum, currentMedia, lumWidth, lumHeight);
+      let lumData: Uint8ClampedArray;
+      try {
+        lumData = ctxLum.getImageData(0, 0, lumWidth, lumHeight).data;
+      } catch {
+        // If media is cross-origin without CORS headers, canvas readback is blocked.
+        // Keep rendering stable with a white luminance fallback instead of throwing.
+        lumData = new Uint8ClampedArray(lumWidth * lumHeight * 4).fill(255);
+      }
 
       const halfTileW = tileW / 2;
       const halfTileH = tileH / 2;
-      const subCellSize = tileW / SUB_GRID_SIZE;
-
       // 2) Halftone: draw into a single ImageData then putImageData once (faster than many fillRects)
       let imgData = imageDataRef.current;
       if (!imgData || imgData.width !== cw || imgData.height !== ch) {
@@ -439,13 +533,10 @@ export function MouseLiquid({
       const out = imgData.data;
       const [br, bg, bb] = parseRgb(backgroundColor);
       const [dr, dg, db] = parseRgb(dotColor);
-      const len = out.length;
-      for (let i = 0; i < len; i += 4) {
-        out[i] = br;
-        out[i + 1] = bg;
-        out[i + 2] = bb;
-        out[i + 3] = 255;
-      }
+      // One 32-bit write per pixel instead of four byte writes (major win vs full-CPU clear loop)
+      new Uint32Array(out.buffer, out.byteOffset, out.length >> 2).fill(
+        br | (bg << 8) | (bb << 16) | (255 << 24)
+      );
 
       for (let i = 1; i <= fluid.width; i++) {
         for (let j = 1; j <= fluid.height; j++) {
@@ -453,34 +544,65 @@ export function MouseLiquid({
           const cy = (j - 1) * tileH + halfTileH;
           const cellDensity = d[fluid.idx(i, j)];
           const isActive = cellDensity >= MOVEMENT_THRESHOLD;
+          const lumThreshold = MIN_DOT_THRESHOLD;
+          const activeSizeMultiplier = isActive ? ACTIVE_DOT_SIZE_MULTIPLIER : 1;
+          let drewDot = false;
 
-          if (isActive) {
-            const lx = (i - 1) * SUB_GRID_SIZE + 1;
-            const ly = (j - 1) * SUB_GRID_SIZE + 1;
-            const lum = getLuminance(lumData, ((ly * lumWidth + lx) | 0) * 4);
-            if (lum <= MIN_DOT_THRESHOLD) continue;
-            const normD = Math.min(1, MOVEMENT_THRESHOLD > 0 ? cellDensity / MOVEMENT_THRESHOLD : 1);
-            const sizeFactor = 1 + normD * (MOVEMENT_RADIUS_SCALE - 1);
-            const halfSize = lum * (tileW / 2) * DOT_RADIUS_SCALE * sizeFactor;
-            if (halfSize > MIN_DOT_RADIUS) {
-              fillRectInBuffer(out, cw, ch, cx, cy, halfSize, dr, dg, db);
-            }
-          } else {
-            for (let si = 0; si < SUB_OFFSET_RATIOS.length; si++) {
-              const [rx, ry] = SUB_OFFSET_RATIOS[si];
-              const sx = si % SUB_GRID_SIZE;
-              const sy = (si / SUB_GRID_SIZE) | 0;
-              const lx = (i - 1) * SUB_GRID_SIZE + sx;
-              const ly = (j - 1) * SUB_GRID_SIZE + sy;
-              const lum = getLuminance(lumData, (ly * lumWidth + lx) * 4);
-              if (lum <= MIN_DOT_THRESHOLD) continue;
-              const halfSize = lum * (subCellSize / 2) * DOT_RADIUS_SCALE;
-              if (halfSize > MIN_DOT_RADIUS) {
-                const qx = cx + rx * tileW;
-                const qy = cy + ry * tileH;
-                fillRectInBuffer(out, cw, ch, qx, qy, halfSize, dr, dg, db);
-              }
-            }
+          const currentSubGridSize = isActive ? ACTIVE_SUB_GRID_SIZE : IDLE_SUB_GRID_SIZE;
+          const currentOffsets = isActive
+            ? ACTIVE_SUB_OFFSET_RATIOS
+            : IDLE_SUB_OFFSET_RATIOS;
+          const currentCenterSubIndex = centerSubIndexForSize(currentSubGridSize);
+          const subCellSize = tileW / currentSubGridSize;
+          const subHalfSize = subCellSize / 2;
+
+          for (let si = 0; si < currentOffsets.length; si++) {
+            const [rx, ry] = currentOffsets[si];
+            const sx = si % currentSubGridSize;
+            const sy = (si / currentSubGridSize) | 0;
+            const lumSx = Math.min(
+              LUM_SAMPLE_GRID_SIZE - 1,
+              Math.floor(((sx + 0.5) * LUM_SAMPLE_GRID_SIZE) / currentSubGridSize)
+            );
+            const lumSy = Math.min(
+              LUM_SAMPLE_GRID_SIZE - 1,
+              Math.floor(((sy + 0.5) * LUM_SAMPLE_GRID_SIZE) / currentSubGridSize)
+            );
+            const lx = (i - 1) * LUM_SAMPLE_GRID_SIZE + lumSx;
+            const ly = (j - 1) * LUM_SAMPLE_GRID_SIZE + lumSy;
+            const lum = getLuminance(lumData, (ly * lumWidth + lx) * 4);
+            if (lum <= lumThreshold) continue;
+            const qx = cx + rx * tileW;
+            const qy = cy + ry * tileH;
+            const dotHalfSize =
+              subHalfSize *
+              getDotSizeRatioFromLuminance(lum) *
+              activeSizeMultiplier;
+            fillDiamondInBuffer(out, cw, ch, qx, qy, dotHalfSize, dr, dg, db);
+            drewDot = true;
+          }
+
+          // Ensure at least one illuminated dot per cell (center fallback).
+          if (!drewDot) {
+            const sx = currentCenterSubIndex;
+            const sy = currentCenterSubIndex;
+            const [rx, ry] = currentOffsets[sy * currentSubGridSize + sx];
+            const lumSx = Math.min(
+              LUM_SAMPLE_GRID_SIZE - 1,
+              Math.floor(((sx + 0.5) * LUM_SAMPLE_GRID_SIZE) / currentSubGridSize)
+            );
+            const lumSy = Math.min(
+              LUM_SAMPLE_GRID_SIZE - 1,
+              Math.floor(((sy + 0.5) * LUM_SAMPLE_GRID_SIZE) / currentSubGridSize)
+            );
+            const lx = (i - 1) * LUM_SAMPLE_GRID_SIZE + lumSx;
+            const ly = (j - 1) * LUM_SAMPLE_GRID_SIZE + lumSy;
+            const lum = getLuminance(lumData, (ly * lumWidth + lx) * 4);
+            const qx = cx + rx * tileW;
+            const qy = cy + ry * tileH;
+            const dotHalfSize =
+              subHalfSize * getDotSizeRatioFromLuminance(lum) * activeSizeMultiplier;
+            fillDiamondInBuffer(out, cw, ch, qx, qy, dotHalfSize, dr, dg, db);
           }
         }
       }
@@ -493,21 +615,27 @@ export function MouseLiquid({
       fluid.reset(d_ui);
       fluid.reset(u_ui);
       fluid.reset(v_ui);
-
-      rafId = requestAnimationFrame(loop);
     }
-    rafId = requestAnimationFrame(loop);
+
+    const unsubscribe = subscribeGlobalTempus(onFrame);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('touchmove', onTouchMove);
+      unsubscribe?.();
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerleave', onPointerLeave);
+      fluidStateSnapshotRef.current = {
+        col,
+        row,
+        dNext: new Float32Array(fluid.d_next),
+        uNext: new Float32Array(fluid.u_next),
+        vNext: new Float32Array(fluid.v_next),
+      };
       fluidRef.current = null;
       dUiRef.current = null;
       uUiRef.current = null;
       vUiRef.current = null;
     };
-  }, [width, height, col, row, mediaReady, ctrl]);
+  }, [width, height, col, row, mediaReady, ctrl, isInViewport]);
 
   return (
     <Wrapper ref={wrapperRef} className={className}>

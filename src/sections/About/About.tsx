@@ -5,7 +5,6 @@ import { theme } from '@/theme';
 const Section = styled.section`
   position: relative;
   width: 100%;
-  min-height: 600px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -16,36 +15,79 @@ const Section = styled.section`
 `;
 
 const SectionContent = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: flex-start;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: stretch;
   gap: ${props => props.theme.spacing.xxl};
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
-const ImageWrapper = styled.div`
+const ImageColumn = styled.div`
   position: relative;
-  height: 800px;
-  width: 600px;
-  overflow: visible;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+`;
+
+const ImageFrame = styled.div`
+  position: relative;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid ${props => props.theme.colors.theme};
+  background: ${props => props.theme.colors.black};
+  aspect-ratio: 1 / 2.39;
 `;
 
 const ContentContainer = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: center;
-  padding: ${props => props.theme.spacing.xxl};
-  max-width: 40%;
+  justify-content: flex-start;
+  padding: ${props => props.theme.spacing.xl} 0;
+`;
+
+const CardImageOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.5));
+`;
+
+const CornerBracket = styled.span<{ $position: 'tl' | 'tr' | 'bl' | 'br' }>`
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: ${props => props.theme.colors.theme};
+  border-style: solid;
+  border-width: 0;
+
+  ${props => (props.$position === 'tl' || props.$position === 'tr') && 'top: 10px;'}
+  ${props => (props.$position === 'bl' || props.$position === 'br') && 'bottom: 10px;'}
+  ${props => (props.$position === 'tl' || props.$position === 'bl') && 'left: 10px;'}
+  ${props => (props.$position === 'tr' || props.$position === 'br') && 'right: 10px;'}
+
+  ${props => (props.$position === 'tl' || props.$position === 'bl') && 'border-left-width: 1px;'}
+  ${props => (props.$position === 'tr' || props.$position === 'br') && 'border-right-width: 1px;'}
+  ${props => (props.$position === 'tl' || props.$position === 'tr') && 'border-top-width: 1px;'}
+  ${props => (props.$position === 'bl' || props.$position === 'br') && 'border-bottom-width: 1px;'}
 `;
 
 const RollingTextContainer = styled.div`
   height: fit-content;
-  width: 100%;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  padding: ${props => props.theme.spacing.xl} 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  transform: rotate(0deg);
+  transform-origin: left center;
 `;
 const TaglineContainer = styled.div`
   display: flex;
@@ -72,16 +114,6 @@ const FancyTagline = styled.h1`
   line-height: 1.1;
   color: ${props => props.theme.colors.white};
   font-style: italic;
-`;
-
-const BlockTagline = styled.h1`
-  margin: 0;
-  padding: 0;
-  font-family: ${props => props.theme.fonts.families.block};
-  font-size: ${props => props.theme.fonts.sizes.xxxl};
-  font-weight: 400;
-  line-height: 1.1;
-  color: ${props => props.theme.colors.white};
 `;
 
 const BasicTagline = styled.h1`
@@ -118,11 +150,11 @@ function RollingTitle() {
   return (
     <RollingTextContainer>
       <RollingText
-        text={["ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT"]}
+        text={["ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT"]}
         reverse={true}
       />
       <RollingText
-        text={["ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT"]}
+        text={["ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT", "ABOUT"]}
         reverse={false}
       />        
     </RollingTextContainer>
@@ -134,14 +166,20 @@ function About() {
     <Section>
       <RollingTitle />
       <SectionContent>
-        <ImageWrapper>
+        <ImageColumn>
+          <ImageFrame>
             <MouseLiquid
               image="/About_nbg_sm.png"
               dotColor={theme.colors.white}
               backgroundColor={theme.colors.black}
-
             />
-        </ImageWrapper>
+            <CardImageOverlay />
+            <CornerBracket $position="tl" />
+            <CornerBracket $position="tr" />
+            <CornerBracket $position="bl" />
+            <CornerBracket $position="br" />
+          </ImageFrame>
+        </ImageColumn>
         <ContentContainer>
           <TaglineContainer>
             <FancyTagline>hello there,</FancyTagline>

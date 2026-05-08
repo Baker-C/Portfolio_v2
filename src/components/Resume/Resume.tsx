@@ -24,7 +24,7 @@ export function Resume() {
   const href = `${import.meta.env.BASE_URL}${RESUME_FILENAME}`;
   return (
     <ResumeLink href={href} target="_blank" rel="noopener noreferrer">
-      Resume
+      Download Resume
     </ResumeLink>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { Hero, About, Projects, Contact } from './sections';
+import { Hero, About, Projects, Timeline, Contact } from './sections';
 import { Name, Resume, SlidingMessage } from '@/components';
 
 const SCROLL_IDLE_MS = 600;
@@ -46,6 +46,7 @@ function Layout() {
 
         <About />
         <Projects />
+        <Timeline />
         <SlidingMessage />
         <Contact />
       </ScrollContainer>

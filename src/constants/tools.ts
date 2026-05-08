@@ -1,7 +1,37 @@
 const tools = {
+  javascript: {
+    name: 'JavaScript',
+    icon: 'https://developer.mozilla.org/favicon-48x48.cbbd161b.png',
+    color: '#F7DF1E',
+  },
+  html: {
+    name: 'HTML',
+    icon: 'https://developer.mozilla.org/favicon-48x48.cbbd161b.png',
+    color: '#E34F26',
+  },
+  css: {
+    name: 'CSS',
+    icon: 'https://developer.mozilla.org/favicon-48x48.cbbd161b.png',
+    color: '#1572B6',
+  },
+  java: {
+    name: 'Java',
+    icon: 'https://www.java.com/favicon.ico',
+    color: '#f89820',
+  },
+  python: {
+    name: 'Python',
+    icon: 'https://www.python.org/static/favicon.ico',
+    color: '#3776AB',
+  },
   react: {
     name: 'React',
     icon: 'https://reactjs.org/logo-og.png',
+    color: '#61DAFB',
+  },
+  reactNative: {
+    name: 'React Native',
+    icon: 'https://reactnative.dev/img/header_logo.svg',
     color: '#61DAFB',
   },
   nodejs: {
@@ -28,6 +58,26 @@ const tools = {
     name: 'Framer',
     icon: 'https://www.framer.com/assets/favicon-c622187736226437d7a54537d721819a.png',
     color: '#000000',
+  },
+  figma: {
+    name: 'Figma',
+    icon: 'https://static.figma.com/app/icon/1/favicon.svg',
+    color: '#F24E1E',
+  },
+  github: {
+    name: 'GitHub',
+    icon: 'https://github.githubassets.com/favicons/favicon.svg',
+    color: '#ffffff',
+  },
+  googleWorkspace: {
+    name: 'Google Workspace',
+    icon: 'https://workspace.google.com/static/img/favicon.ico',
+    color: '#4285F4',
+  },
+  jira: {
+    name: 'Jira',
+    icon: 'https://wac-cdn.atlassian.com/assets/img/favicons/atlassian/favicon.png',
+    color: '#0052CC',
   },
   webflow: {
     name: 'WebFlow',
@@ -83,6 +133,11 @@ const tools = {
     name: 'Vercel',
     icon: 'https://www.vercel.com/assets/images/favicon.ico',
     color: '#000000',
+  },
+  githubActions: {
+    name: 'GitHub Actions',
+    icon: 'https://github.githubassets.com/favicons/favicon.svg',
+    color: '#2088FF',
   },
 } as const;
 
