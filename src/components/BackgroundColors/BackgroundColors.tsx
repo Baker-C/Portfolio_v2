@@ -33,7 +33,7 @@ const BackgroundColor1 = styled(Orb)`
   left: 50%;
   margin-left: -150px;
   margin-top: -150px;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const BackgroundColor2 = styled(Orb)`
@@ -41,7 +41,7 @@ const BackgroundColor2 = styled(Orb)`
   left: 35%;
   margin-left: -150px;
   margin-top: -150px;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const BackgroundColor3 = styled(Orb)`
@@ -49,7 +49,7 @@ const BackgroundColor3 = styled(Orb)`
   left: 65%;
   margin-left: -150px;
   margin-top: -150px;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const BackgroundColor4 = styled(Orb)`
@@ -57,7 +57,7 @@ const BackgroundColor4 = styled(Orb)`
   left: 70%;
   margin-left: -150px;
   margin-top: -150px;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const BackgroundColor5 = styled(Orb)`
@@ -65,7 +65,7 @@ const BackgroundColor5 = styled(Orb)`
   left: 20%;
   margin-left: -150px;
   margin-top: -150px;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const BackgroundColor6 = styled(Orb)`
@@ -73,7 +73,7 @@ const BackgroundColor6 = styled(Orb)`
   left: 15%;
   margin-left: -150px;
   margin-top: -150px;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const MotionBackgroundColor1 = motion(BackgroundColor1);

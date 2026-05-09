@@ -1,25 +1,35 @@
 import styled from 'styled-components';
 import { RollingText, MouseLiquid } from '@/components';
-import { theme } from '@/theme';
 
 const Section = styled.section`
   position: relative;
   width: 100%;
+  max-width: min(${props => props.theme.spacing.maxWidth}, 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
   gap: ${props => props.theme.spacing.xxl};
-  max-width: ${props => props.theme.spacing.maxWidth};
-  margin: 120px auto;
+  margin: 0 auto 120px;
+  padding: 0 ${props => props.theme.spacing.md};
+  box-sizing: border-box;
+
+  @media (min-width: 769px) {
+    padding: 0;
+  }
 `;
 
 const SectionContent = styled.div`
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(35vw, 1fr) minmax(0, 2fr);
   align-items: stretch;
   gap: ${props => props.theme.spacing.xxl};
+
+  @media (min-width: 1025px) {
+    column-gap: 5vw;
+    row-gap: ${props => props.theme.spacing.xxl};
+  }
 
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
@@ -29,15 +39,16 @@ const SectionContent = styled.div`
 const ImageColumn = styled.div`
   position: relative;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: flex-start;
 `;
 
 const ImageFrame = styled.div`
   position: relative;
-  height: 100%;
   width: 100%;
   max-width: 100%;
+  height: min(70vh, 800px);
+  margin-top: calc(2 * ${props => props.theme.spacing.xxl});
   overflow: hidden;
   border: 1px solid ${props => props.theme.colors.theme};
   background: ${props => props.theme.colors.black};
@@ -57,25 +68,6 @@ const CardImageOverlay = styled.div`
   inset: 0;
   pointer-events: none;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.5));
-`;
-
-const CornerBracket = styled.span<{ $position: 'tl' | 'tr' | 'bl' | 'br' }>`
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-color: ${props => props.theme.colors.theme};
-  border-style: solid;
-  border-width: 0;
-
-  ${props => (props.$position === 'tl' || props.$position === 'tr') && 'top: 10px;'}
-  ${props => (props.$position === 'bl' || props.$position === 'br') && 'bottom: 10px;'}
-  ${props => (props.$position === 'tl' || props.$position === 'bl') && 'left: 10px;'}
-  ${props => (props.$position === 'tr' || props.$position === 'br') && 'right: 10px;'}
-
-  ${props => (props.$position === 'tl' || props.$position === 'bl') && 'border-left-width: 1px;'}
-  ${props => (props.$position === 'tr' || props.$position === 'br') && 'border-right-width: 1px;'}
-  ${props => (props.$position === 'tl' || props.$position === 'tr') && 'border-top-width: 1px;'}
-  ${props => (props.$position === 'bl' || props.$position === 'br') && 'border-bottom-width: 1px;'}
 `;
 
 const RollingTextContainer = styled.div`
@@ -114,6 +106,16 @@ const FancyTagline = styled.h1`
   line-height: 1.1;
   color: ${props => props.theme.colors.white};
   font-style: italic;
+
+  @media (max-width: 768px) {
+    white-space: normal;
+    position: relative;
+    transform: none;
+    left: auto;
+    top: auto;
+    font-size: ${props => props.theme.fonts.sizes.xxl};
+    max-width: 100%;
+  }
 `;
 
 const BasicTagline = styled.h1`
@@ -124,6 +126,12 @@ const BasicTagline = styled.h1`
   font-weight: 800;
   line-height: 1.1;
   color: ${props => props.theme.colors.white};
+
+  @media (max-width: 768px) {
+    font-size: ${props => props.theme.fonts.sizes.xxl};
+    max-width: 100%;
+    word-wrap: break-word;
+  }
 `;
 
 const TextContainer = styled.div`
@@ -144,6 +152,11 @@ const Paragraph = styled.p`
   line-height: 1.4;
   color: ${props => props.theme.colors.white};
   white-space: wrap;
+  overflow-wrap: anywhere;
+
+  @media (max-width: 768px) {
+    font-size: ${props => props.theme.fonts.sizes.md};
+  }
 `;
 
 function RollingTitle() {
@@ -168,16 +181,8 @@ function About() {
       <SectionContent>
         <ImageColumn>
           <ImageFrame>
-            <MouseLiquid
-              image="/About_nbg_sm.png"
-              dotColor={theme.colors.white}
-              backgroundColor={theme.colors.black}
-            />
+            <MouseLiquid image="/About_nbg_2.png" />
             <CardImageOverlay />
-            <CornerBracket $position="tl" />
-            <CornerBracket $position="tr" />
-            <CornerBracket $position="bl" />
-            <CornerBracket $position="br" />
           </ImageFrame>
         </ImageColumn>
         <ContentContainer>
@@ -187,10 +192,13 @@ function About() {
           </TaglineContainer>
           <TextContainer>
             <Paragraph>
-              I work with React, React-Native, and MongoDB to build full-stack web and mobile applications.
+              I work with React, React-Native, and Express, Redis, and MongoDB.
             </Paragraph>
             <Paragraph>
-              When I'm not coding, you'll find me creating games in Unreal, trying new recipes, or looking into new AI tools. I truly believe that continuous learning is the key to successful and meaningful work.
+              I code in order to make change happen. It's the reason I started this career and it's why I've spent countless hours building my skills. The amount of good and innovation one person can do with software skills, a good idea, and a computer is absolutely insurmountable.
+            </Paragraph>
+            <Paragraph>
+              Thus, whether it is supporting globally recognized non-profits, or creating apps that will revolutionize industries, I will continue to develop.
             </Paragraph>
           </TextContainer>
         </ContentContainer>

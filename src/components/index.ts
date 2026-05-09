@@ -11,3 +11,4 @@ export { Halftone, type HalftoneProps } from './Halftone';
 export { MovingBg, type MovingBgProps } from './MovingBg';
 export { RollingText, type RollingTextProps } from './RollingText';
 export { MouseLiquid, type MouseLiquidProps, type MouseLiquidControlOptions } from './MouseLiquid';
+export { InitialOverlay } from './InitialOverlay';

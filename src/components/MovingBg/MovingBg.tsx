@@ -43,7 +43,7 @@ export type MovingBgProps = {
 
 function MovingBg({
   image = '/bg-1.mp4',
-  dotColor = theme.colors.white,
+  dotColor = theme.colors.theme,
   backgroundColor = theme.colors.black,
 }: MovingBgProps = {}) {
   return (
