@@ -28,13 +28,13 @@ const MotionLightPill = motion(LightPill);
 const DARK_ANIMATION = {
   initial: { transform: 'translate(-50%, -50%)' },
   animate: { transform: 'translate(-50%, 110%)' },
-  transition: { duration: 3, ease: 'easeIn', delay: 0 },
+  transition: { duration: 2.2, ease: 'easeIn', delay: 0 },
 } as const;
 
 const LIGHT_ANIMATION = {
   initial: { transform: 'translate(-50%, -50%)' },
   animate: { transform: 'translate(-50%, 110%)' },
-  transition: { duration: 2.5, ease: 'easeIn', delay: 0.5 },
+  transition: { duration: 1.5, ease: 'easeIn', delay: 0.5 },
 } as const;
 
 export function InitialOverlay() {
