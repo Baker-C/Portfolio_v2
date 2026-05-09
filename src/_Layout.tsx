@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import styled from 'styled-components';
 import { Hero, About, Projects, Timeline, Contact } from './sections';
 import { InitialOverlay, Name, Resume } from '@/components';
@@ -40,8 +41,20 @@ function Layout() {
         ref={scrollRef}
         className={`scroll-container ${isScrolling ? 'scrolling' : ''}`}
       >
-        <Name />
-        <Resume />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 3, ease: 'easeInOut' }}
+        >
+          <Name />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 3, ease: 'easeInOut' }}
+        >
+          <Resume />
+        </motion.div>
         <Hero />
 
         <About />

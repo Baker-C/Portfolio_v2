@@ -5,9 +5,15 @@ import {
 } from '@/styles/externalLinkArrow';
 import { theme } from '@/theme';
 import { motion } from 'framer-motion';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 const CONTACT_SECTION_ID = 'contact';
+const CONTACT_ME_LABEL = 'Contact Me';
+
+const contactArrowFadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
 
 
 const BgContainer = styled.div`
@@ -128,6 +134,7 @@ const Underline = styled.span`
 `;
 
 const MotionTagline = motion(Tagline);
+const MotionPageHeader = motion(PageHeader);
 
 /** Not rotated — padding maps to real viewport side/bottom. Inner link handles rotateZ. */
 const ContactMeOuter = styled.div`
@@ -161,6 +168,12 @@ const ContactMeLink = styled.a`
 
   ${externalLinkArrowLongTrailing}
   ${externalLinkUnderlineSlide}
+
+  &::after {
+    opacity: 0;
+    animation: ${contactArrowFadeIn} 0.22s ease forwards;
+    animation-delay: ${`${4 + CONTACT_ME_LABEL.length * 0.05}s`};
+  }
 `;
 
 const ButtonsContainer = styled.div`
@@ -270,21 +283,35 @@ function Hero() {
             document.getElementById(CONTACT_SECTION_ID)?.scrollIntoView({ behavior: 'smooth' });
           }}
         >
-          Contact Me
+          {Array.from(CONTACT_ME_LABEL).map((char, index) => (
+            <motion.span
+              key={`${char}-${index}`}
+              style={{ display: 'inline-block' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.22, delay: 4 + index * 0.05, ease: 'easeOut' }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </motion.span>
+          ))}
         </ContactMeLink>
       </ContactMeOuter>
       <ContentContainer>
-        <PageHeader>
+        <MotionPageHeader
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 2, ease: 'easeInOut' }}
+        >
           <FancyTitle>Full Stack</FancyTitle>
           <BlockTitle>Developer</BlockTitle>
           <MotionTagline
             initial={{ clipPath: 'inset(0 100% 0 0)' }}
             animate={{ clipPath: 'inset(0 0 0 0)' }}
-            transition={{ duration: 2.5, delay: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 2.5, delay: 2.5, ease: [0.25, 0.1, 0.25, 1] }}
           >
             Based in <Underline>San Francisco, CA</Underline>
           </MotionTagline>
-        </PageHeader>
+        </MotionPageHeader>
       </ContentContainer>
       <ButtonsContainer>
         <ButtonText>
