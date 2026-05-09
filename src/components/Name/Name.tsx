@@ -50,6 +50,19 @@ const NameButton = styled.button<{ $showTooltip: boolean }>`
   &:hover::after {
     opacity: ${props => (props.$showTooltip ? 1 : 0)};
   }
+
+  @media (max-width: 640px) {
+    left: ${props => props.theme.spacing.sm};
+    top: ${props => props.theme.spacing.md};
+    font-size: ${props => props.theme.fonts.sizes.md};
+  }
+
+  @media (max-width: 400px) {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    top: calc(3.5 * ${props => props.theme.spacing.md});
+  }
 `;
 
 const WordStack = styled.span`

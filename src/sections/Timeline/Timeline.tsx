@@ -14,8 +14,6 @@ const RollingTextContainer = styled.div`
   width: 100%;
   padding: ${props => props.theme.spacing.xl} 0;
   margin-bottom: ${props => props.theme.spacing.xl};
-  transform: rotate(-5deg);
-  transform-origin: left center;
 `;
 
 const TimelineRail = styled.ol`
@@ -26,18 +24,18 @@ const TimelineRail = styled.ol`
   padding: 0 ${props => props.theme.spacing.xl};
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.xl};
+  gap: ${props => props.theme.spacing.xxl};
 `;
 
 const TimelineItem = styled.li`
   display: grid;
   grid-template-columns: 180px 24px 1fr;
   align-items: start;
-  column-gap: ${props => props.theme.spacing.md};
+  column-gap: ${props => props.theme.spacing.lg};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    row-gap: ${props => props.theme.spacing.sm};
+    row-gap: ${props => props.theme.spacing.md};
   }
 `;
 
@@ -46,7 +44,7 @@ const Period = styled.p`
   padding-top: 2px;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
-  color: ${props => props.theme.colors.theme};
+  color: ${props => props.theme.colors.white};
   text-transform: uppercase;
   letter-spacing: 0.08em;
 `;
@@ -67,9 +65,9 @@ const Dot = styled.span`
   height: 12px;
   margin-top: 6px;
   border-radius: 50%;
-  border: 1px solid ${props => props.theme.colors.theme};
-  background: ${props => props.theme.colors.theme};
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+  border: 1px solid ${props => props.theme.colors.white};
+  background: ${props => props.theme.colors.white};
+  box-shadow: 0 0 20px 1px color-mix(in srgb, ${props => props.theme.colors.theme} 30%, transparent);
   z-index: 2;
 `;
 
@@ -79,15 +77,17 @@ const Rail = styled.span`
   top: 20px;
   transform: translateX(-50%);
   width: 1px;
-  bottom: calc(-${props => props.theme.spacing.xl} - 4px);
-  background: ${props => props.theme.colors.theme};
+  /* Note: calc(-var(--x)) is invalid; use 0px - var(--x) so the line length resolves. */
+  bottom: calc(0px - ${props => props.theme.spacing.xxl} - 4px);
+  background: color-mix(in srgb, ${props => props.theme.colors.white} 35%, transparent);
 `;
 
 const Card = styled.article`
   position: relative;
   border: 1px solid ${props => props.theme.colors.theme};
   background: linear-gradient(150deg, rgba(20, 20, 24, 0.9), rgba(9, 9, 12, 0.9));
-  padding: ${props => props.theme.spacing.lg};
+  padding: ${props => props.theme.spacing.xl};
+  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
 `;
 
 const Role = styled.h3`
@@ -98,35 +98,54 @@ const Role = styled.h3`
 `;
 
 const Company = styled.p`
-  margin: ${props => props.theme.spacing.xs} 0 0;
+  margin: ${props => props.theme.spacing.sm} 0 0;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.md};
-  color: ${props => props.theme.colors.theme};
+  color: ${props => props.theme.colors.white};
 `;
 
 const ToolRow = styled.p`
-  margin: ${props => props.theme.spacing.sm} 0 0;
+  margin: ${props => props.theme.spacing.md} 0 0;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: ${props => props.theme.colors.theme};
+  color: ${props => props.theme.colors.white};
 `;
 
 const OutcomeList = styled.ul`
-  margin: ${props => props.theme.spacing.md} 0 0;
-  padding-left: ${props => props.theme.spacing.md};
+  margin: ${props => props.theme.spacing.lg} 0 0;
+  padding-left: ${props => props.theme.spacing.lg};
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.xs};
+  gap: ${props => props.theme.spacing.md};
 `;
 
 const Outcome = styled.li`
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.md};
-  color: ${props => props.theme.colors.theme};
+  color: ${props => props.theme.colors.white};
   line-height: 1.5;
 `;
+
+const OutcomeTitle = styled.span`
+  font-weight: 600;
+`;
+
+const OutcomeBody = styled.p`
+  margin: ${props => props.theme.spacing.xs} 0 0;
+  font-weight: 400;
+  list-style: none;
+`;
+
+function splitOutcome(outcome: string): { title: string; body: string | null } {
+  const colonIndex = outcome.indexOf(':');
+  if (colonIndex === -1) return { title: outcome, body: null };
+  return {
+    title: outcome.slice(0, colonIndex).trim(),
+    body: outcome.slice(colonIndex + 1).trim() || null,
+  };
+}
 
 const timeline = [
   {
@@ -143,11 +162,13 @@ const timeline = [
       tools.jira,
     ],
     outcomes: [
-      'Owned mobile CI/CD and code review approvals across 3 platform variants, supporting 20+ deployments.',
-      'Re-architected legacy JavaScript features into TypeScript, cutting API call volume by more than 50% in key flows.',
-      'Implemented 13+ React Native data services and connected 4 backend service clients to MobX cache stores.',
-      'Expanded a NATS ecosystem with 50+ microservices to ship full-stack features in a multi-tenant system.',
-      'Flagged OAuth architecture risks early and prevented severe mobile security exposure.',
+      'Microservices Implementation: Used TypeScript, Next.js, and MongoDB to expand a NATS system, shipping features for thousands of users in a multi-tenant platform.',
+      'AI Work Environment: Built an internal tool that transitioned UI development from Figma to an AI-driven React system, cutting cycles from days to hours.',
+      'CI/CD & Release Ownership: Owned mobile app GitHub CI/CD DevOps for 48 engineers, 3 concurrent platform tenants, and 20+ app deployments.',
+      'TypeScript Optimization: Re-architected legacy JavaScript features in TypeScript, reducing API call volume by over 50% for key features.',
+      'Distributed Service Implementation: Used React Native and TypeScript to implement app features connected to a microservices backend.',
+      'Mobile Development: Built out a React-Native application that supports thousands of users.',
+      'OAuth Security: Identified architectural gaps in mobile OAuth implementation, preventing medical data exposure for thousands of users.',
     ],
   },
   {
@@ -233,9 +254,15 @@ function Timeline() {
                 <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
               ) : null}
               <OutcomeList>
-                {entry.outcomes.map(outcome => (
-                  <Outcome key={outcome}>{outcome}</Outcome>
-                ))}
+                {entry.outcomes.map(outcome => {
+                  const { title, body } = splitOutcome(outcome);
+                  return (
+                    <Outcome key={outcome}>
+                      <OutcomeTitle>{title}</OutcomeTitle>
+                      {body ? <OutcomeBody>{body}</OutcomeBody> : null}
+                    </Outcome>
+                  );
+                })}
               </OutcomeList>
             </Card>
           </TimelineItem>

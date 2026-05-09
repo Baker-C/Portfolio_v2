@@ -21,7 +21,7 @@ const TileStyled = styled.div<{
   height: ${props => props.$tileSize}px;
   flex-shrink: 0;
   border: 1px solid ${(props) => props.theme.colors.black};
-  background-color: ${(props) => props.theme.colors.tint};
+  background-color: ${(props) => props.theme.colors.theme};
   transition: all .4s ease 0.15s;
 
   &:before {
@@ -41,7 +41,7 @@ const TileStyled = styled.div<{
     content: '';
     position: absolute;
     inset: 0;
-    background-color: ${(props) => props.theme.colors.tint}aa;
+    background-color: ${(props) => props.theme.colors.theme}aa;
     pointer-events: none;
     opacity: 0;
     ${props => props.$pulsing && css`
@@ -51,7 +51,7 @@ const TileStyled = styled.div<{
 
   --dip: 5px;
   --scale: .99; 
-  --shadow: 0 2px 18px ${props => props.theme.colors.tint};
+  --shadow: 0 2px 18px ${props => props.theme.colors.theme};
 
   ${props => props.$active && `
     transition: all 50ms ease 0s;

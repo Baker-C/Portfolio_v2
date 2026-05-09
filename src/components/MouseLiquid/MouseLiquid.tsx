@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { theme } from '@/theme';
 import { FluidDynamicSolver } from './fluidSolver';
 import { subscribeGlobalTempus } from '@/utils/tempusTicker';
 
 const OVERFLOW_CELLS = 12;
+
+/**
+ * Pointer farther than this (CSS px) from the canvas bounds is ignored for this instance
+ * (avoids driving every MouseLiquid on the page from one cursor).
+ */
+const DEFAULT_POINTER_PROXIMITY_PX = 140;
 
 // ——— Halftone / dot size (tweak these) ———
 /** Pixel size of each grid cell (and max dot diameter). Larger = bigger, chunkier dots. */
@@ -129,26 +136,37 @@ const Wrapper = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 0;
   flex: 1 1 0;
-  overflow: visible;
+  overflow: hidden;
 `;
 
 const Canvas = styled.canvas`
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
 `;
 
 export type MouseLiquidProps = {
   className?: string;
-  /** Single image or video URL (object-fit: cover). Drawn as halftone dots; movement above threshold halves dot radius. */
+  /**
+   * Single image or video URL. Drawn with **cover**-style scaling (fills the frame; may crop),
+   * then halftoned; movement above threshold halves dot radius.
+   */
   image: string;
-  /** Dot color. Default '#000'. */
+  /** Dot color. Defaults to theme accent. */
   dotColor?: string;
-  /** Background color. Default '#fff'. */
+  /** Background color. Defaults to black. */
   backgroundColor?: string;
   /** Optional fluid simulation control; omitted fields use defaults. */
   control?: { options?: MouseLiquidControlOptions };
+  /**
+   * How far outside the canvas (CSS px) the pointer still influences this instance.
+   * Mapping uses full canvas‑space coordinates (including past the bitmap edge); bilinear splats
+   * onto edge cells when the cursor is nearby but not over the element.
+   */
+  interactionMarginPx?: number;
 };
 
 function drawMediaCover(
@@ -238,9 +256,10 @@ function getDotSizeRatioFromLuminance(lum: number): number {
 export function MouseLiquid({
   className,
   image,
-  dotColor = '#000',
-  backgroundColor = '#fff',
+  dotColor = theme.colors.theme,
+  backgroundColor = theme.colors.black,
   control: controlProp,
+  interactionMarginPx = DEFAULT_POINTER_PROXIMITY_PX,
 }: MouseLiquidProps) {
   const ctrl = useMemo(() => mergeControl(controlProp), [controlProp]);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -379,14 +398,15 @@ export function MouseLiquid({
       const x = (clientX - rect.left) * scaleX;
       const y = (clientY - rect.top) * scaleY;
 
-      const tileW = CELL_SIZE_PX;
-      const tileH = CELL_SIZE_PX;
+      const tileW = canvasEl.width / col;
+      const tileH = canvasEl.height / row;
       const last = lastRef.current;
       const d_ui = dUiRef.current;
       const u_ui = uUiRef.current;
       const v_ui = vUiRef.current;
       if (!d_ui || !u_ui || !v_ui) return;
 
+      /** Maps canvas-pixel coords (may lie outside the bitmap) into bilinear weights on fluid cells. */
       const stampAt = (
         stampX: number,
         stampY: number,
@@ -394,38 +414,71 @@ export function MouseLiquid({
         velY: number,
         densityAmount: number
       ) => {
-        const stampTileX = Math.max(1, Math.min(col, ((stampX / tileW) | 0) + 1));
-        const stampTileY = Math.max(1, Math.min(row, ((stampY / tileH) | 0) + 1));
+        const ax = stampX / tileW;
+        const ay = stampY / tileH;
+        const ix0 = Math.floor(ax);
+        const iy0 = Math.floor(ay);
+        const tx = ax - ix0;
+        const ty = ay - iy0;
+        const w00 = (1 - tx) * (1 - ty);
+        const w10 = tx * (1 - ty);
+        const w01 = (1 - tx) * ty;
+        const w11 = tx * ty;
 
-        if (ctrl.emitDensity) {
-          for (
-            let i = Math.max(1, stampTileX - ctrl.emitDensityExpand);
-            i <= Math.min(stampTileX + ctrl.emitDensityExpand, col);
-            i++
-          ) {
+        type Corner = readonly [number, number, number];
+        const corners: Corner[] = [
+          [ix0, iy0, w00],
+          [ix0 + 1, iy0, w10],
+          [ix0, iy0 + 1, w01],
+          [ix0 + 1, iy0 + 1, w11],
+        ];
+
+        let wSum = 0;
+        const valid: [number, number, number][] = [];
+        for (const [cx, cy, w] of corners) {
+          if (w <= 0) continue;
+          const fi = cx + 1;
+          const fj = cy + 1;
+          if (fi < 1 || fi > col || fj < 1 || fj > row) continue;
+          valid.push([fi, fj, w]);
+          wSum += w;
+        }
+        if (wSum <= 0 || valid.length === 0) return;
+
+        for (const [centerFi, centerFj, w] of valid) {
+          const wn = w / wSum;
+
+          if (ctrl.emitDensity) {
             for (
-              let j = Math.max(1, stampTileY - ctrl.emitDensityExpand);
-              j <= Math.min(stampTileY + ctrl.emitDensityExpand, row);
-              j++
+              let i = Math.max(1, centerFi - ctrl.emitDensityExpand);
+              i <= Math.min(centerFi + ctrl.emitDensityExpand, col);
+              i++
             ) {
-              d_ui[fluid.idx(i, j)] += densityAmount * ctrl.emitDensityScale;
+              for (
+                let j = Math.max(1, centerFj - ctrl.emitDensityExpand);
+                j <= Math.min(centerFj + ctrl.emitDensityExpand, row);
+                j++
+              ) {
+                d_ui[fluid.idx(i, j)] +=
+                  densityAmount * wn * ctrl.emitDensityScale;
+              }
             }
           }
-        }
 
-        if (ctrl.emitVelocity) {
-          for (
-            let i = Math.max(1, stampTileX - ctrl.emitVelocityExpand);
-            i <= Math.min(stampTileX + ctrl.emitVelocityExpand, col);
-            i++
-          ) {
+          if (ctrl.emitVelocity) {
             for (
-              let j = Math.max(1, stampTileY - ctrl.emitVelocityExpand);
-              j <= Math.min(stampTileY + ctrl.emitVelocityExpand, row);
-              j++
+              let i = Math.max(1, centerFi - ctrl.emitVelocityExpand);
+              i <= Math.min(centerFi + ctrl.emitVelocityExpand, col);
+              i++
             ) {
-              u_ui[fluid.idx(i, j)] += velX * ctrl.emitVelocityScale;
-              v_ui[fluid.idx(i, j)] += velY * ctrl.emitVelocityScale;
+              for (
+                let j = Math.max(1, centerFj - ctrl.emitVelocityExpand);
+                j <= Math.min(centerFj + ctrl.emitVelocityExpand, row);
+                j++
+              ) {
+                u_ui[fluid.idx(i, j)] += velX * wn * ctrl.emitVelocityScale;
+                v_ui[fluid.idx(i, j)] += velY * wn * ctrl.emitVelocityScale;
+              }
             }
           }
         }
@@ -435,7 +488,6 @@ export function MouseLiquid({
         const deltaX = x - last.x;
         const deltaY = y - last.y;
         const moveLen = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        // Path stamping: split long pointer jumps so fast moves paint a continuous trail.
         const stampSpacing = Math.max(1, Math.min(tileW, tileH) * 0.5);
         const steps = Math.max(1, Math.min(16, Math.ceil(moveLen / stampSpacing)));
         const perStepDensity = steps > 0 ? moveLen / steps : 0;
@@ -453,17 +505,22 @@ export function MouseLiquid({
       lastRef.current = { x, y };
     }
 
+    const marginPx = interactionMarginPx;
+
     const onPointer = (clientX: number, clientY: number) => {
       const rect = canvasEl.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
       if (
-        clientX < rect.left ||
-        clientX > rect.right ||
-        clientY < rect.top ||
-        clientY > rect.bottom
+        clientX < rect.left - marginPx ||
+        clientX > rect.right + marginPx ||
+        clientY < rect.top - marginPx ||
+        clientY > rect.bottom + marginPx
       ) {
         lastRef.current = null;
         return;
       }
+
       pointerMoveHandle(clientX, clientY);
     };
 
@@ -635,7 +692,7 @@ export function MouseLiquid({
       uUiRef.current = null;
       vUiRef.current = null;
     };
-  }, [width, height, col, row, mediaReady, ctrl, isInViewport]);
+  }, [width, height, col, row, mediaReady, ctrl, isInViewport, interactionMarginPx]);
 
   return (
     <Wrapper ref={wrapperRef} className={className}>
@@ -643,11 +700,7 @@ export function MouseLiquid({
         ref={canvasRef}
         style={{
           position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: col * CELL_SIZE_PX,
-          height: row * CELL_SIZE_PX,
+          inset: 0,
         }}
       />
     </Wrapper>

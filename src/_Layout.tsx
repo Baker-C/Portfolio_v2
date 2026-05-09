@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { Hero, About, Projects, Timeline, Contact } from './sections';
-import { Name, Resume, SlidingMessage } from '@/components';
+import { InitialOverlay, Name, Resume } from '@/components';
 
 const SCROLL_IDLE_MS = 600;
 
@@ -9,7 +9,7 @@ const ScrollContainer = styled.div`
   position: fixed;
   inset: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-color: ${props => props.theme.colors.black};
   /* Scrollbar: track transparent so BackgroundColors shows through (see index.css .scroll-container) */
 `;
@@ -47,9 +47,9 @@ function Layout() {
         <About />
         <Projects />
         <Timeline />
-        <SlidingMessage />
         <Contact />
       </ScrollContainer>
+      <InitialOverlay />
       {/* <BackgroundColors scrollContainerRef={scrollRef} /> */}
     </>
   );

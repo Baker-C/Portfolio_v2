@@ -16,7 +16,7 @@ const Container = styled.div`
   min-height: 100%;
   max-height: 300vh;
   overflow: hidden;
-  background-color: ${props => props.theme.colors.tint};
+  background-color: ${props => props.theme.colors.theme};
 `;
 
 const GetXTranslation = (index: number) => {
