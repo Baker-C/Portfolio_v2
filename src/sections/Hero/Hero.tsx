@@ -64,10 +64,10 @@ const ContentContainer = styled.div`
   padding-left: ${props => props.theme.spacing.xl};
 
   @media (max-width: 768px) {
-    top: 40vh;
+    top: 50vh;
     left: 0;
     right: 0;
-    padding-left: ${props => props.theme.spacing.md};
+    padding-left: ${props => props.theme.spacing.xl};
     padding-right: ${props => props.theme.spacing.md};
     max-width: 100%;
     align-items: flex-start;
