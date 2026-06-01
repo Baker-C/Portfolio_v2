@@ -330,7 +330,7 @@ function Hero() {
       </ButtonsContainer>
     </Container>
       <BgContainer>
-        <MovingBg image="/bg-1.mp4" />
+        <MovingBg image="/bg-1.mp4" fadeLiquidOverlay />
       </BgContainer>
     </>
   );
