@@ -16,7 +16,7 @@ function ensureGlobalTickRunning() {
   }, {
     label: 'MouseLiquidGlobal',
     priority: 1,
-  });
+  }) ?? null;
 }
 
 function stopGlobalTickIfIdle() {
