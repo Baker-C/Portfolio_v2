@@ -1,1 +1,1 @@
-export { MovingBg, type MovingBgProps } from './MovingBg';
+export { MovingBg, type MovingBgProps, type MovingBgOverlays } from './MovingBg';

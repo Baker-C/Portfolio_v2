@@ -20,18 +20,6 @@ const BgContainer = styled.div`
   pointer-events: none;
 `;
 
-const BlackFade = styled.div`
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0) 100%
-  );
-`;
-
 const Wrapper = styled.div`
   position: relative;
   z-index: 2;
@@ -137,9 +125,8 @@ function Contact() {
   return (
     <Section id={CONTACT_SECTION_ID}>
       <BgContainer>
-        <MovingBg image="/bg-1.mp4" />
+        <MovingBg image="/bg-1.mp4" overlays={{ top: true }} />
       </BgContainer>
-      <BlackFade aria-hidden />
       <Wrapper>
         <TitleButton
           type="button"

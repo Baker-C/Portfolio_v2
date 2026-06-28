@@ -16,6 +16,17 @@ const contactArrowFadeIn = keyframes`
 `;
 
 
+const HeroSection = styled.section`
+  position: relative;
+  width: 100%;
+  min-height: 900px;
+
+  @media (max-width: 768px) {
+    min-height: 100svh;
+    min-height: 100dvh;
+  }
+`;
+
 const BgContainer = styled.div`
   position: absolute;
   top: 100px;
@@ -36,7 +47,7 @@ const Container = styled.div`
   width: 100%;
   min-height: 900px;
   height: auto;
-  /* Allow rotated Contact control to extend past box; video lives in sibling BgContainer */
+  /* Allow rotated Contact control to extend past box; liquid bg lives in sibling BgContainer */
   overflow: visible;
   max-width: ${props => props.theme.spacing.maxWidth};
   margin: 0 auto;
@@ -52,7 +63,7 @@ const Container = styled.div`
 const ContentContainer = styled.div`
   position: absolute;
   z-index: 1;
-  top: 60vh;
+  top: 60%;
   left: 0;
   display: flex;
   width: fit-content;
@@ -64,7 +75,7 @@ const ContentContainer = styled.div`
   padding-left: ${props => props.theme.spacing.xl};
 
   @media (max-width: 768px) {
-    top: 50vh;
+    top: 50%;
     left: 0;
     right: 0;
     padding-left: ${props => props.theme.spacing.xl};
@@ -140,7 +151,7 @@ const MotionPageHeader = motion(PageHeader);
 const ContactMeOuter = styled.div`
   position: absolute;
   z-index: 2;
-  top: 20vh;
+  top: 20%;
   left: ${props => props.theme.spacing.xl};
   box-sizing: border-box;
   padding-bottom: ${props => props.theme.spacing.xl};
@@ -179,7 +190,7 @@ const ContactMeLink = styled.a`
 const ButtonsContainer = styled.div`
   position: absolute;
   z-index: 1;
-  top: 20vh;
+  top: 20%;
   right: 300px;
   display: flex;
   flex-direction: column;
@@ -189,7 +200,7 @@ const ButtonsContainer = styled.div`
 
   @media (max-width: 768px) {
     top: auto;
-    bottom: max(12svh, ${props => props.theme.spacing.xxl});
+    bottom: max(12%, ${props => props.theme.spacing.xxl});
     right: 50%;
     transform: translateX(50%);
     width: min(260px, calc(100vw - ${props => props.theme.spacing.md} * 2));
@@ -200,7 +211,7 @@ const ButtonsContainer = styled.div`
 
   @media (max-width: 400px) {
     gap: ${props => props.theme.spacing.xs};
-    bottom: max(4svh, ${props => props.theme.spacing.lg});
+    bottom: max(4%, ${props => props.theme.spacing.lg});
   }
 `;
 
@@ -273,8 +284,15 @@ const StyledSwirlyArrow = styled(SwirlyArrow)`
 function Hero() {
 
   return (
-    <>
-    <Container>
+    <HeroSection>
+      <BgContainer>
+        <MovingBg
+          image="/bg-1.mp4"
+          fadeLiquidOverlay
+          overlays={{ left: true, top: true, bottom: true }}
+        />
+      </BgContainer>
+      <Container>
       <ContactMeOuter>
         <ContactMeLink
           href={`#${CONTACT_SECTION_ID}`}
@@ -328,11 +346,8 @@ function Hero() {
           }
         />
       </ButtonsContainer>
-    </Container>
-      <BgContainer>
-        <MovingBg image="/bg-1.mp4" fadeLiquidOverlay />
-      </BgContainer>
-    </>
+      </Container>
+    </HeroSection>
   );
 }
 

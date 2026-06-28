@@ -35,6 +35,17 @@ const OverlayTb = styled.div`
   pointer-events: none;
 `;
 
+const OverlayBt = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background-image: linear-gradient(to top, rgb(0, 0, 0), rgba(0, 0, 0, 0));
+  pointer-events: none;
+`;
+
 const liquidBlackFadeOut = keyframes`
   from {
     opacity: 1;
@@ -59,12 +70,26 @@ const OverlayLiquidBlack = styled.div`
   animation-delay: 2s;
 `;
 
+export type MovingBgOverlays = {
+  left?: boolean;
+  top?: boolean;
+  bottom?: boolean;
+};
+
 export type MovingBgProps = {
   image?: string;
   dotColor?: string;
   backgroundColor?: string;
   /** Fade a solid black layer over the liquid 2s after mount. */
   fadeLiquidOverlay?: boolean;
+  /** Which gradient overlays to render over the liquid. */
+  overlays?: MovingBgOverlays;
+};
+
+const DEFAULT_OVERLAYS: Required<MovingBgOverlays> = {
+  left: true,
+  top: true,
+  bottom: true,
 };
 
 function MovingBg({
@@ -72,7 +97,10 @@ function MovingBg({
   dotColor = theme.colors.theme,
   backgroundColor = theme.colors.black,
   fadeLiquidOverlay = false,
+  overlays: overlaysProp,
 }: MovingBgProps = {}) {
+  const overlays = { ...DEFAULT_OVERLAYS, ...overlaysProp };
+
   return (
     <Wrapper aria-hidden>
       <MouseLiquid
@@ -81,8 +109,9 @@ function MovingBg({
         backgroundColor={backgroundColor}
       />
       {fadeLiquidOverlay ? <OverlayLiquidBlack /> : null}
-      <OverlayLr />
-      <OverlayTb />
+      {overlays.left ? <OverlayLr /> : null}
+      {overlays.top ? <OverlayTb /> : null}
+      {overlays.bottom ? <OverlayBt /> : null}
     </Wrapper>
   );
 }

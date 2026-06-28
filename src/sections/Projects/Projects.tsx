@@ -265,9 +265,9 @@ const mainProjects: MainProject[] = [
   {
     kind: 'main',
     id: 7,
-    title: 'Social Media Agents',
+    title: "Solomon's Swarm",
     description:
-      "Full-stack developer of Solomon's Swarm, a platform of autonomous AI agents that run social media accounts end-to-end — generating, scheduling, and posting content on their own. Built a FastAPI and RavenDB backend with an in-process scheduler, OAuth2 account binding, and a champion/challenger learning loop where agents score their own posts and self-rewrite their pipelines and personas to improve over time, all driven from a React operator dashboard.",
+      "Developed Solomon's Swarm, a platform of autonomous AI agents that run social media accounts end-to-end — generating, scheduling, and posting content on their own. Built a FastAPI and RavenDB backend with an in-process scheduler, OAuth2 account binding, and a champion/challenger learning loop where agents score their own posts and self-rewrite their pipelines and personas to improve over time, all driven from a React operator dashboard.",
     image: SOCIAL_MEDIA_AGENTS_IMAGE,
     tools: [
       tools.python,
