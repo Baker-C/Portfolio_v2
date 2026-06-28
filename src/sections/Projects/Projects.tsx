@@ -231,6 +231,9 @@ const ProjectText = styled.p`
 const EVERBETTER_PRO_RECORDED_DEMO_URL =
   'https://app.guidde.com/share/playbooks/rVH7Vk1Y8hTZ5MgByuTmYz';
 
+/** Public asset: `public/Social Media Agents.png` */
+const SOCIAL_MEDIA_AGENTS_IMAGE = '/Social%20Media%20Agents.png';
+
 /** Public asset: `public/Everbetter Pro Screenshot.png` */
 const EVERBETTER_PRO_IMAGE = '/Everbetter%20Pro%20Screenshot.png';
 
@@ -259,6 +262,21 @@ const NUCLEAR_IMAGE = '/Nuclear%20Screenshot.png';
 const NUCLEAR_NY_IMAGE = '/Nuclear%20NY%20Screenshot.png';
 
 const mainProjects: MainProject[] = [
+  {
+    kind: 'main',
+    id: 7,
+    title: 'Social Media Agents',
+    description:
+      "Full-stack developer of Solomon's Swarm, a platform of autonomous AI agents that run social media accounts end-to-end — generating, scheduling, and posting content on their own. Built a FastAPI and RavenDB backend with an in-process scheduler, OAuth2 account binding, and a champion/challenger learning loop where agents score their own posts and self-rewrite their pipelines and personas to improve over time, all driven from a React operator dashboard.",
+    image: SOCIAL_MEDIA_AGENTS_IMAGE,
+    tools: [
+      tools.python,
+      tools.react,
+      tools.typescript,
+      tools.docker,
+    ],
+    links: [],
+  },
   {
     kind: 'main',
     id: 0,
@@ -339,7 +357,7 @@ const sideProjects: SideProject[] = [
     description: 'Conference/event website focused on program information, simple maintenance, and symposium history. Soon to be released.',
     image: NUCLEAR_IMAGE,
     liveUrl: null,
-    linkText: 'Going Live May 12th, 2025',
+    linkText: 'In Development, Releasing July 3rd',
     isComingSoon: true,
     tools: [tools.javascript, tools.html, tools.css, tools.webflow],
   },
@@ -350,7 +368,7 @@ const sideProjects: SideProject[] = [
     description: 'Public-facing web experience supporting the Nuclear New York non-profit, promoting nuclear education and outreach in New York. Soon to be released.',
     image: NUCLEAR_NY_IMAGE,
     liveUrl: null,
-    linkText: 'Going Live May 15th, 2025',
+    linkText: 'In Development, Releasing July 3rd',
     isComingSoon: true,
     tools: [tools.javascript, tools.html, tools.css, tools.webflow],
   },
