@@ -1,0 +1,3 @@
+# Treat base64-embedded/raster SVGs in public/ as binary so diffs don't emit
+# huge single-line blobs (crashes Warp's Code Review/symbol indexer).
+public/*.svg -diff
