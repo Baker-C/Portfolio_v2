@@ -87,7 +87,6 @@ const Card = styled.article`
   border: 1px solid ${props => props.theme.colors.theme};
   background: linear-gradient(150deg, rgba(20, 20, 24, 0.9), rgba(9, 9, 12, 0.9));
   padding: ${props => props.theme.spacing.xl};
-  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
 `;
 
 const Role = styled.h3`
