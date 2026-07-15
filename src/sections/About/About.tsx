@@ -181,7 +181,7 @@ function About() {
       <SectionContent>
         <ImageColumn>
           <ImageFrame>
-            <MouseLiquid image="/About_nbg_2.png" />
+            <MouseLiquid image="/Self_Image.png" />
             <CardImageOverlay />
           </ImageFrame>
         </ImageColumn>
