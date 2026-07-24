@@ -53,9 +53,12 @@ const TimelineRail = styled.ol`
   gap: ${props => props.theme.spacing.xxl};
 `;
 
+const PERIOD_COLUMN_WIDTH = 130;
+
 const TimelineItem = styled.li`
+  position: relative;
   display: grid;
-  grid-template-columns: 180px 24px 1fr;
+  grid-template-columns: ${PERIOD_COLUMN_WIDTH}px 24px 1fr;
   align-items: start;
   column-gap: ${props => props.theme.spacing.lg};
 
@@ -65,48 +68,44 @@ const TimelineItem = styled.li`
   }
 `;
 
+const PERIOD_LINE_HEIGHT = 1.3;
+
 const Period = styled.div`
   display: flex;
   flex-direction: column;
   padding-top: 2px;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
+  line-height: ${PERIOD_LINE_HEIGHT};
   color: ${props => props.theme.colors.white};
   text-transform: uppercase;
   letter-spacing: 0.08em;
 `;
 
 const RailCell = styled.div`
-  position: relative;
-  min-height: 100%;
-  display: flex;
-  justify-content: center;
-
   @media (max-width: 768px) {
     display: none;
   }
 `;
 
-const Dot = styled.span`
-  width: 12px;
-  height: 12px;
-  margin-top: 6px;
-  border-radius: 50%;
-  border: 1px solid ${props => props.theme.colors.white};
-  background: ${props => props.theme.colors.white};
-  box-shadow: 0 0 20px 1px color-mix(in srgb, ${props => props.theme.colors.theme} 30%, transparent);
-  z-index: 2;
-`;
+/**
+ * Anchored to TimelineItem (not RailCell) so it's aligned under the date column instead of
+ * sitting in the RailCell gutter. Starts right below the (3-line) date text and runs through
+ * the gap to the next date.
+ */
+const RAIL_END_PADDING_PX = 14;
 
 const Rail = styled.span`
   position: absolute;
-  left: 50%;
-  top: 20px;
-  transform: translateX(-50%);
+  left: 0;
+  top: calc(2px + (${props => props.theme.fonts.sizes.sm} * ${PERIOD_LINE_HEIGHT} * 3) + ${RAIL_END_PADDING_PX}px);
+  bottom: calc(${RAIL_END_PADDING_PX}px - ${props => props.theme.spacing.xxl});
   width: 1px;
-  /* Note: calc(-var(--x)) is invalid; use 0px - var(--x) so the line length resolves. */
-  bottom: calc(0px - ${props => props.theme.spacing.xxl} - 4px);
   background: color-mix(in srgb, ${props => props.theme.colors.white} 35%, transparent);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Card = styled.article`
@@ -169,7 +168,7 @@ const OutcomeList = styled.ul`
   padding-left: ${props => props.theme.spacing.lg};
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  gap: ${props => props.theme.spacing.sm};
 `;
 
 const Outcome = styled.li`
@@ -178,25 +177,6 @@ const Outcome = styled.li`
   color: ${props => props.theme.colors.white};
   line-height: 1.5;
 `;
-
-const OutcomeTitle = styled.span`
-  font-weight: 600;
-`;
-
-const OutcomeBody = styled.p`
-  margin: ${props => props.theme.spacing.xs} 0 0;
-  font-weight: 400;
-  list-style: none;
-`;
-
-function splitOutcome(outcome: string): { title: string; body: string | null } {
-  const colonIndex = outcome.indexOf(':');
-  if (colonIndex === -1) return { title: outcome, body: null };
-  return {
-    title: outcome.slice(0, colonIndex).trim(),
-    body: outcome.slice(colonIndex + 1).trim() || null,
-  };
-}
 
 const timeline: TimelineEntry[] = [
   {
@@ -214,12 +194,10 @@ const timeline: TimelineEntry[] = [
       tools.jira,
     ],
     responsibilities: [
-      'Develop and ship features across a multi-tenant NATS microservices backend using TypeScript, Next.js, and MongoDB, serving thousands of users.',
-      'Build and maintain React Native app features connected to that microservices backend, supporting thousands of mobile users.',
-      'Own the mobile GitHub CI/CD and DevOps release process, covering 48 engineers across 3 concurrent platform tenants and 20+ app deployments.',
-      'Re-architect legacy JavaScript into TypeScript, cutting API call volume by over 50% on key features.',
-      'Build internal AI-driven tooling that replaced the manual Figma-to-code handoff, cutting UI development cycles from days to hours.',
-      'Audit the mobile OAuth implementation for security gaps, closing issues that could have exposed protected health information for thousands of users.',
+      'Develop and ship features across a multi-tenant NATS microservices backend, React frontend, and React Native mobile applications.',
+      'Support mobile CI/CD and DevOps releases.',
+      'Communicate with clients about specific requirements and translate that into existing and new tasks.',
+      'Build internal tooling to support and speed up team development.',
     ],
   },
   {
@@ -230,9 +208,8 @@ const timeline: TimelineEntry[] = [
     tools: [tools.webflow, tools.framer, tools.figma, tools.react, tools.typescript, tools.python, tools.github],
     responsibilities: [
       'Build and deploy production client websites using React, Framer, and WebFlow.',
-      "Build custom Python tools so non-technical stakeholders can run AI web scraping and manage site content independently.",
-      "Design UI/UX concepts and interactive prototypes in Figma aligned to each client's goals and audience.",
-      'Produce written and video documentation for technical and non-technical maintainers.',
+      'Build Python scripts and write documentation to support website maintenance for non-technical users.',
+      "Design UI/UX concepts according to each client's requirements and preferences.",
     ],
   },
   {
@@ -242,14 +219,13 @@ const timeline: TimelineEntry[] = [
     company: 'New Clear Energy USA, Inc.',
     tools: [tools.python, tools.googleWorkspace, tools.framer, tools.figma],
     responsibilities: [
-      'Redesign calendar and email-filtering workflows and introduce AI-driven task automation into daily operations, recovering roughly 3 hours of daily productivity for leadership.',
-      'Restructure email and file systems to support the new automated workflows.',
-      'Advise on UI/UX direction, brand consistency, technical infrastructure, and application architecture for the company website.',
+      'Redesign online workflows to improve technical hygiene and productivity.',
+      'Advise on UI/UX direction, brand consistency, and application architecture.',
     ],
   },
   {
-    periodStart: 'September 2020',
-    periodEnd: 'December 2024',
+    periodStart: 'Sept 2020',
+    periodEnd: 'Dec 2024',
     role: 'Graduated, B.S. Computer Science',
     company: 'California Polytechnic State University, SLO',
     tools: [tools.python, tools.c, tools.java, tools.javascript, tools.sql],
@@ -261,11 +237,11 @@ const timeline: TimelineEntry[] = [
   {
     periodStart: 'May 2023',
     periodEnd: 'Jan 2024',
-    role: 'Junior Full Stack Developer (Non-Profit Project)',
+    role: 'Junior Full Stack Developer',
     company: 'Oyate Learning',
     tools: [tools.react, tools.mongodb, tools.nodejs, tools.express, tools.mongoose, tools.redux, tools.python],
     responsibilities: [
-      'Build the Indigenous Database, a full-stack app for searching and compiling Indigenous literature resources for community education.',
+      'Build the Indigenous Database, an application for compiling and sharing links to Indigenous literature and art for community education.',
       'Design and deploy a REST API with MongoDB, Mongoose, and Express, plus a React/Redux frontend.',
       'Implement role-based access control, user authentication, and an automated web-scraper-to-database pipeline.',
       'Optimize API performance, cutting overhead data by ~80% and average query time from ~550ms to ~250ms.',
@@ -297,15 +273,13 @@ function Timeline() {
       <TimelineRail>
         {timeline.map((entry, index) => (
           <TimelineItem key={entry.role}>
+            {index < timeline.length - 1 ? <Rail /> : null}
             <Period>
               <span>{entry.periodStart}</span>
               <span>-</span>
               <span>{entry.periodEnd}</span>
             </Period>
-            <RailCell>
-              <Dot />
-              {index < timeline.length - 1 ? <Rail /> : null}
-            </RailCell>
+            <RailCell />
             <Card>
               <Role>{entry.role}</Role>
               <Company>{entry.company}</Company>
@@ -330,15 +304,9 @@ function Timeline() {
                     <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
                   ) : null}
                   <OutcomeList>
-                    {entry.outcomes.map(outcome => {
-                      const { title, body } = splitOutcome(outcome);
-                      return (
-                        <Outcome key={outcome}>
-                          <OutcomeTitle>{title}</OutcomeTitle>
-                          {body ? <OutcomeBody>{body}</OutcomeBody> : null}
-                        </Outcome>
-                      );
-                    })}
+                    {entry.outcomes.map(outcome => (
+                      <Outcome key={outcome}>{outcome}</Outcome>
+                    ))}
                   </OutcomeList>
                 </>
               )}

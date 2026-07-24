@@ -149,6 +149,61 @@ const tools = {
     icon: 'https://github.githubassets.com/favicons/favicon.svg',
     color: '#2088FF',
   },
+  pnpm: {
+    name: 'pnpm',
+    icon: 'https://pnpm.io/favicon.ico',
+    color: '#F69220',
+  },
+  postgresql: {
+    name: 'PostgreSQL',
+    icon: 'https://www.postgresql.org/favicon.ico',
+    color: '#4169E1',
+  },
+  redis: {
+    name: 'Redis',
+    icon: 'https://redis.io/favicon.ico',
+    color: '#DC382D',
+  },
+  nats: {
+    name: 'NATS',
+    icon: 'https://nats.io/favicon.ico',
+    color: '#27AAE1',
+  },
+  openai: {
+    name: 'OpenAI',
+    icon: 'https://openai.com/favicon.ico',
+    color: '#10A37F',
+  },
+  langchain: {
+    name: 'LangChain',
+    icon: 'https://www.langchain.com/favicon.ico',
+    color: '#1C3C3C',
+  },
+  gcp: {
+    name: 'GCP',
+    icon: 'https://cloud.google.com/favicon.ico',
+    color: '#4285F4',
+  },
+  aws: {
+    name: 'AWS',
+    icon: 'https://aws.amazon.com/favicon.ico',
+    color: '#FF9900',
+  },
+  kubernetes: {
+    name: 'Kubernetes',
+    icon: 'https://kubernetes.io/favicon.ico',
+    color: '#326CE5',
+  },
+  expo: {
+    name: 'Expo',
+    icon: 'https://expo.dev/favicon.ico',
+    color: '#000020',
+  },
+  tus: {
+    name: 'tus',
+    icon: 'https://tus.io/favicon.ico',
+    color: '#F94877',
+  },
 } as const;
 
 export default tools;
