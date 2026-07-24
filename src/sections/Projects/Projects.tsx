@@ -74,8 +74,7 @@ const ProjectCard = styled.li`
   background: linear-gradient(145deg, rgba(18, 18, 20, 0.88), rgba(7, 7, 10, 0.88));
   border: 1px solid ${props => props.theme.colors.theme};
   padding: ${props => props.theme.spacing.lg};
-  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
-  transition: border-color 220ms ease, box-shadow 220ms ease;
+  transition: border-color 220ms ease;
 
   @media (max-width: 1024px) {
     grid-column: span 12;
@@ -89,8 +88,7 @@ const MainProjectCard = styled.li`
   background: linear-gradient(145deg, rgba(18, 18, 20, 0.88), rgba(7, 7, 10, 0.88));
   border: 1px solid ${props => props.theme.colors.theme};
   padding: ${props => props.theme.spacing.lg};
-  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
-  transition: border-color 220ms ease, box-shadow 220ms ease;
+  transition: border-color 220ms ease;
 `;
 
 const MainProjectInner = styled.div`
@@ -357,7 +355,7 @@ const sideProjects: SideProject[] = [
     description: 'Conference/event website focused on program information, simple maintenance, and symposium history. Soon to be released.',
     image: NUCLEAR_IMAGE,
     liveUrl: null,
-    linkText: 'In Development, Releasing July 3rd',
+    linkText: 'To Be Released Soon',
     isComingSoon: true,
     tools: [tools.javascript, tools.html, tools.css, tools.webflow],
   },
@@ -368,7 +366,7 @@ const sideProjects: SideProject[] = [
     description: 'Public-facing web experience supporting the Nuclear New York non-profit, promoting nuclear education and outreach in New York. Soon to be released.',
     image: NUCLEAR_NY_IMAGE,
     liveUrl: null,
-    linkText: 'In Development, Releasing July 3rd',
+    linkText: 'To Be Released Soon',
     isComingSoon: true,
     tools: [tools.javascript, tools.html, tools.css, tools.webflow],
   },
