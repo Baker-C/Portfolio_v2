@@ -19,6 +19,16 @@ const tools = {
     icon: 'https://www.java.com/favicon.ico',
     color: '#f89820',
   },
+  c: {
+    name: 'C',
+    icon: 'https://en.cppreference.com/favicon.ico',
+    color: '#555555',
+  },
+  sql: {
+    name: 'SQL',
+    icon: 'https://www.w3schools.com/favicon.ico',
+    color: '#e38c00',
+  },
   python: {
     name: 'Python',
     icon: 'https://www.python.org/static/favicon.ico',

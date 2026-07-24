@@ -6,29 +6,17 @@ import { theme } from '@/theme';
 
 type ToolEntry = (typeof tools)[keyof typeof tools];
 
-type SideProject = {
-  kind: 'side';
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  liveUrl: string | null;
-  linkText: string;
-  tools: ToolEntry[];
-  /** Plain status text: no link, no hover affordance */
-  isComingSoon?: boolean;
-};
+type ProjectLinkItem = { label: string; href: string };
 
-type MainProjectLink = { label: string; href: string };
-
-type MainProject = {
-  kind: 'main';
+type Project = {
   id: number;
   title: string;
   description: string;
   image: string;
   tools: ToolEntry[];
-  links: MainProjectLink[];
+  links: ProjectLinkItem[];
+  /** Plain status text: no link, no hover affordance. Rendered instead of links when present. */
+  comingSoonNote?: string;
 };
 
 const Section = styled.section`
@@ -52,8 +40,8 @@ const List = styled.ul`
   padding: 0;
   width: 100%;
   max-width: ${props => props.theme.spacing.maxWidth};
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: ${props => props.theme.spacing.xxl};
   padding: 0 ${props => props.theme.spacing.xl};
   box-sizing: border-box;
@@ -65,35 +53,15 @@ const List = styled.ul`
 `;
 
 const ProjectCard = styled.li`
-  position: relative;
-  grid-column: span 6;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: ${props => props.theme.spacing.lg};
-  background: linear-gradient(145deg, rgba(18, 18, 20, 0.88), rgba(7, 7, 10, 0.88));
-  border: 1px solid ${props => props.theme.colors.theme};
-  padding: ${props => props.theme.spacing.lg};
-  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
-  transition: border-color 220ms ease, box-shadow 220ms ease;
-
-  @media (max-width: 1024px) {
-    grid-column: span 12;
-  }
-`;
-
-const MainProjectCard = styled.li`
-  grid-column: span 12;
   display: flex;
   flex-direction: column;
   background: linear-gradient(145deg, rgba(18, 18, 20, 0.88), rgba(7, 7, 10, 0.88));
   border: 1px solid ${props => props.theme.colors.theme};
   padding: ${props => props.theme.spacing.lg};
-  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
-  transition: border-color 220ms ease, box-shadow 220ms ease;
+  transition: border-color 220ms ease;
 `;
 
-const MainProjectInner = styled.div`
+const ProjectInner = styled.div`
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -106,7 +74,7 @@ const MainProjectInner = styled.div`
   }
 `;
 
-const MainImageColumn = styled.div`
+const ImageColumn = styled.div`
   position: relative;
   min-width: 0;
   display: flex;
@@ -118,7 +86,7 @@ const MainImageColumn = styled.div`
   }
 `;
 
-const MainInfoColumn = styled.div`
+const InfoColumn = styled.div`
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -141,25 +109,18 @@ const ProjectTitle = styled.h2`
   }
 `;
 
-const IMAGE_SIDE_MARGIN = (props: { theme: { spacing: { xs: string } } }) =>
-  props.theme.spacing.xs;
-
 const CardImageFrame = styled.div`
   position: relative;
   width: auto;
   max-width: 100%;
-  margin-left: ${IMAGE_SIDE_MARGIN};
-  margin-right: ${IMAGE_SIDE_MARGIN};
-  height: 260px;
-  overflow: hidden;
-  border: 1px solid ${props => props.theme.colors.theme};
-  background: ${props => props.theme.colors.black};
-`;
-
-const MainCardImageFrame = styled(CardImageFrame)`
+  margin-left: ${props => props.theme.spacing.xs};
+  margin-right: ${props => props.theme.spacing.xs};
   flex: 1;
   height: auto;
   min-height: 280px;
+  overflow: hidden;
+  border: 1px solid ${props => props.theme.colors.theme};
+  background: ${props => props.theme.colors.black};
 
   @media (min-width: 900px) {
     min-height: 320px;
@@ -199,14 +160,6 @@ const ProjectLink = styled.a`
 
   ${externalLinkArrowTrailing}
   ${externalLinkUnderlineSlide}
-`;
-
-const LinkPlaceholder = styled.span`
-  font-family: ${props => props.theme.fonts.families.basic};
-  font-size: ${props => props.theme.fonts.sizes.sm};
-  color: ${props => props.theme.colors.white};
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 `;
 
 const ComingSoonNote = styled.span`
@@ -261,9 +214,10 @@ const NUCLEAR_IMAGE = '/Nuclear%20Screenshot.png';
 /** Public asset: `public/Nuclear NY Screenshot.png` */
 const NUCLEAR_NY_IMAGE = '/Nuclear%20NY%20Screenshot.png';
 
-const mainProjects: MainProject[] = [
+const COMING_SOON_NOTE = 'Currently in Development';
+
+const projects: Project[] = [
   {
-    kind: 'main',
     id: 7,
     title: "Solomon's Swarm",
     description:
@@ -276,9 +230,9 @@ const mainProjects: MainProject[] = [
       tools.docker,
     ],
     links: [],
+    comingSoonNote: COMING_SOON_NOTE,
   },
   {
-    kind: 'main',
     id: 0,
     title: 'Everbetter Pro',
     description:
@@ -299,7 +253,6 @@ const mainProjects: MainProject[] = [
     ],
   },
   {
-    kind: 'main',
     id: 1,
     title: 'Everbetter Me',
     description:
@@ -317,60 +270,47 @@ const mainProjects: MainProject[] = [
       { label: 'Apple Store', href: EVERBETTER_ME_APPLE_STORE_URL },
     ],
   },
-];
-
-const sideProjects: SideProject[] = [
   {
-    kind: 'side',
     id: 2,
     title: 'Native Nuclear',
     description: 'A Framer and React web application for Native Nuclear. Developed site in it\'s entirety, including maintainer documentation for site updates, UI/UX consistency, and third-party integrations.',
     image: NATIVE_NUCLEAR_IMAGE,
-    liveUrl: 'https://nativenuclear.org',
-    linkText: 'View Live Site',
     tools: [tools.react, tools.framer],
+    links: [{ label: 'View Live Site', href: 'https://nativenuclear.org' }],
   },
   {
-    kind: 'side',
     id: 3,
     title: 'Oppenheimer Energy',
     description: 'React frontend website for Oppenheimer Energy Ventures. A minimally designed website, showcasing just enough information for investor and supporter intrigue.',
     image: OPPENHEIMER_ENERGY_IMAGE,
-    liveUrl: 'https://oppenheimer.energy',
-    linkText: 'View Live Site',
     tools: [tools.react, tools.typescript, tools.tailwindCss],
+    links: [{ label: 'View Live Site', href: 'https://oppenheimer.energy' }],
   },
   {
-    kind: 'side',
     id: 4,
     title: 'Indigenous Database',
     description: 'Non-profit project for Oyate Learning to search and compile Indigenous literature resources. Utilizes Mongoose with MongoDB for the backend, React and JS for the frontend. No longer operational due to maintenance costs.',
     image: INDIGENOUS_DATABASE_IMAGE,
-    liveUrl: 'https://github.com/Baker-C/Indigenous-Database',
-    linkText: 'View Github',
     tools: [tools.react, tools.mongodb, tools.nodejs, tools.express, tools.mongoose],
+    links: [{ label: 'View Github', href: 'https://github.com/Baker-C/Indigenous-Database' }],
   },
   {
-    kind: 'side',
     id: 6,
     title: 'Nuclear Symposium',
     description: 'Conference/event website focused on program information, simple maintenance, and symposium history. Soon to be released.',
     image: NUCLEAR_IMAGE,
-    liveUrl: null,
-    linkText: 'In Development, Releasing July 3rd',
-    isComingSoon: true,
     tools: [tools.javascript, tools.html, tools.css, tools.webflow],
+    links: [],
+    comingSoonNote: COMING_SOON_NOTE,
   },
   {
-    kind: 'side',
     id: 5,
     title: 'Nuclear NY',
     description: 'Public-facing web experience supporting the Nuclear New York non-profit, promoting nuclear education and outreach in New York. Soon to be released.',
     image: NUCLEAR_NY_IMAGE,
-    liveUrl: null,
-    linkText: 'In Development, Releasing July 3rd',
-    isComingSoon: true,
     tools: [tools.javascript, tools.html, tools.css, tools.webflow],
+    links: [],
+    comingSoonNote: COMING_SOON_NOTE,
   },
 ];
 
@@ -405,19 +345,19 @@ function liquidProps() {
   };
 }
 
-function MainProjectRow({ project }: { project: MainProject }) {
+function ProjectRow({ project }: { project: Project }) {
   const liquid = liquidProps();
 
   return (
-    <MainProjectCard>
-      <MainProjectInner>
-        <MainImageColumn>
-          <MainCardImageFrame>
+    <ProjectCard>
+      <ProjectInner>
+        <ImageColumn>
+          <CardImageFrame>
             <MouseLiquid image={project.image} {...liquid} />
             <CardImageOverlay />
-          </MainCardImageFrame>
-        </MainImageColumn>
-        <MainInfoColumn>
+          </CardImageFrame>
+        </ImageColumn>
+        <InfoColumn>
           <ProjectTitle>{project.title}</ProjectTitle>
           {project.tools?.length ? (
             <StackRow>{project.tools.map(tool => tool.name).join(' / ')}</StackRow>
@@ -429,38 +369,10 @@ function MainProjectRow({ project }: { project: MainProject }) {
                 {link.label}
               </ProjectLink>
             ))}
+            {project.comingSoonNote ? <ComingSoonNote>{project.comingSoonNote}</ComingSoonNote> : null}
           </LinkRow>
-        </MainInfoColumn>
-      </MainProjectInner>
-    </MainProjectCard>
-  );
-}
-
-function SideProjectRow({ project }: { project: SideProject }) {
-  const liquid = liquidProps();
-
-  return (
-    <ProjectCard>
-      <CardImageFrame>
-        <MouseLiquid image={project.image} {...liquid} />
-        <CardImageOverlay />
-      </CardImageFrame>
-      <ProjectTitle>{project.title}</ProjectTitle>
-      {project.tools?.length ? (
-        <StackRow>{project.tools.map(tool => tool.name).join(' / ')}</StackRow>
-      ) : null}
-      <ProjectText>{project.description}</ProjectText>
-      <LinkRow>
-        {project.liveUrl ? (
-          <ProjectLink href={project.liveUrl} target="_blank" rel="noreferrer">
-            {project.linkText}
-          </ProjectLink>
-        ) : project.isComingSoon ? (
-          <ComingSoonNote>{project.linkText}</ComingSoonNote>
-        ) : (
-          <LinkPlaceholder>{project.linkText}</LinkPlaceholder>
-        )}
-      </LinkRow>
+        </InfoColumn>
+      </ProjectInner>
     </ProjectCard>
   );
 }
@@ -470,11 +382,8 @@ function Projects() {
     <Section id={PROJECTS_SECTION_ID}>
       <RollingTitle />
       <List>
-        {mainProjects.map(project => (
-          <MainProjectRow key={project.id} project={project} />
-        ))}
-        {sideProjects.map(project => (
-          <SideProjectRow key={project.id} project={project} />
+        {projects.map(project => (
+          <ProjectRow key={project.id} project={project} />
         ))}
       </List>
     </Section>

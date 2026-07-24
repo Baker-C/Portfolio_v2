@@ -2,6 +2,32 @@ import styled from 'styled-components';
 import tools from '@/constants/tools';
 import { RollingText } from '@/components';
 
+type ToolEntry = (typeof tools)[keyof typeof tools];
+
+type JobEntry = {
+  periodStart: string;
+  periodEnd: string;
+  role: string;
+  company: string;
+  tools: ToolEntry[];
+  responsibilities: string[];
+};
+
+type EducationEntry = {
+  periodStart: string;
+  periodEnd: string;
+  role: string;
+  company: string;
+  tools: ToolEntry[];
+  outcomes: string[];
+};
+
+type TimelineEntry = JobEntry | EducationEntry;
+
+function hasResponsibilities(entry: TimelineEntry): entry is JobEntry {
+  return 'responsibilities' in entry;
+}
+
 const Section = styled.section`
   width: 100%;
   display: flex;
@@ -39,8 +65,9 @@ const TimelineItem = styled.li`
   }
 `;
 
-const Period = styled.p`
-  margin: 0;
+const Period = styled.div`
+  display: flex;
+  flex-direction: column;
   padding-top: 2px;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
@@ -87,7 +114,6 @@ const Card = styled.article`
   border: 1px solid ${props => props.theme.colors.theme};
   background: linear-gradient(150deg, rgba(20, 20, 24, 0.9), rgba(9, 9, 12, 0.9));
   padding: ${props => props.theme.spacing.xl};
-  box-shadow: 0 0 30px 2px color-mix(in srgb, ${props => props.theme.colors.theme} 10%, transparent);
 `;
 
 const Role = styled.h3`
@@ -104,13 +130,38 @@ const Company = styled.p`
   color: ${props => props.theme.colors.white};
 `;
 
+const SectionLabel = styled.p`
+  margin: ${props => props.theme.spacing.lg} 0 0;
+  font-family: ${props => props.theme.fonts.families.basic};
+  font-size: ${props => props.theme.fonts.sizes.sm};
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${props => props.theme.colors.theme};
+`;
+
 const ToolRow = styled.p`
-  margin: ${props => props.theme.spacing.md} 0 0;
+  margin: ${props => props.theme.spacing.sm} 0 0;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: ${props => props.theme.colors.white};
+`;
+
+const ResponsibilityList = styled.ul`
+  margin: ${props => props.theme.spacing.sm} 0 0;
+  padding-left: ${props => props.theme.spacing.lg};
+  display: flex;
+  flex-direction: column;
+  gap: ${props => props.theme.spacing.md};
+`;
+
+const Responsibility = styled.li`
+  font-family: ${props => props.theme.fonts.families.basic};
+  font-size: ${props => props.theme.fonts.sizes.md};
+  color: ${props => props.theme.colors.white};
+  line-height: 1.5;
 `;
 
 const OutcomeList = styled.ul`
@@ -147,9 +198,10 @@ function splitOutcome(outcome: string): { title: string; body: string | null } {
   };
 }
 
-const timeline = [
+const timeline: TimelineEntry[] = [
   {
-    period: 'Aug 2025 - Present',
+    periodStart: 'Aug 2025',
+    periodEnd: 'Present',
     role: 'Full Stack Developer',
     company: 'Everbetter Medicine, LLC',
     tools: [
@@ -161,59 +213,62 @@ const timeline = [
       tools.githubActions,
       tools.jira,
     ],
-    outcomes: [
-      'Microservices Implementation: Used TypeScript, Next.js, and MongoDB to expand a NATS system, shipping features for thousands of users in a multi-tenant platform.',
-      'AI Work Environment: Built an internal tool that transitioned UI development from Figma to an AI-driven React system, cutting cycles from days to hours.',
-      'CI/CD & Release Ownership: Owned mobile app GitHub CI/CD DevOps for 48 engineers, 3 concurrent platform tenants, and 20+ app deployments.',
-      'TypeScript Optimization: Re-architected legacy JavaScript features in TypeScript, reducing API call volume by over 50% for key features.',
-      'Distributed Service Implementation: Used React Native and TypeScript to implement app features connected to a microservices backend.',
-      'Mobile Development: Built out a React-Native application that supports thousands of users.',
-      'OAuth Security: Identified architectural gaps in mobile OAuth implementation, preventing medical data exposure for thousands of users.',
+    responsibilities: [
+      'Develop and ship features across a multi-tenant NATS microservices backend using TypeScript, Next.js, and MongoDB, serving thousands of users.',
+      'Build and maintain React Native app features connected to that microservices backend, supporting thousands of mobile users.',
+      'Own the mobile GitHub CI/CD and DevOps release process, covering 48 engineers across 3 concurrent platform tenants and 20+ app deployments.',
+      'Re-architect legacy JavaScript into TypeScript, cutting API call volume by over 50% on key features.',
+      'Build internal AI-driven tooling that replaced the manual Figma-to-code handoff, cutting UI development cycles from days to hours.',
+      'Audit the mobile OAuth implementation for security gaps, closing issues that could have exposed protected health information for thousands of users.',
     ],
   },
   {
-    period: 'Mar 2025 - Present',
+    periodStart: 'Mar 2025',
+    periodEnd: 'Present',
     role: 'Freelance Developer',
     company: 'Self-Employed',
     tools: [tools.webflow, tools.framer, tools.figma, tools.react, tools.typescript, tools.python, tools.github],
-    outcomes: [
-      'Built and deployed client websites using React, Framer, and Webflow.',
-      'Created Python automation tools so non-technical stakeholders could manage content and AI scraping workflows.',
-      'Designed UI/UX concepts and prototypes in Figma aligned to business goals and audience needs.',
-      'Delivered written and video documentation for both technical and non-technical maintainers.',
+    responsibilities: [
+      'Build and deploy production client websites using React, Framer, and WebFlow.',
+      "Build custom Python tools so non-technical stakeholders can run AI web scraping and manage site content independently.",
+      "Design UI/UX concepts and interactive prototypes in Figma aligned to each client's goals and audience.",
+      'Produce written and video documentation for technical and non-technical maintainers.',
     ],
   },
   {
-    period: 'Jan 2025 - Mar 2025',
+    periodStart: 'Jan 2025',
+    periodEnd: 'Mar 2025',
     role: 'Technical Consultant',
     company: 'New Clear Energy USA, Inc.',
     tools: [tools.python, tools.googleWorkspace, tools.framer, tools.figma],
-    outcomes: [
-      'Recovered roughly 3 hours of daily productivity by redesigning calendar and email filtering workflows.',
-      'Restructured email and file systems, then introduced AI-powered task automation into daily operations.',
-      'Advised on UI/UX direction, brand consistency, technical infrastructure, and application architecture.',
+    responsibilities: [
+      'Redesign calendar and email-filtering workflows and introduce AI-driven task automation into daily operations, recovering roughly 3 hours of daily productivity for leadership.',
+      'Restructure email and file systems to support the new automated workflows.',
+      'Advise on UI/UX direction, brand consistency, technical infrastructure, and application architecture for the company website.',
     ],
   },
   {
-    period: 'Dec 2024',
+    periodStart: 'September 2020',
+    periodEnd: 'December 2024',
     role: 'Graduated, B.S. Computer Science',
     company: 'California Polytechnic State University, SLO',
-    tools: [tools.javascript, tools.typescript, tools.java, tools.python],
+    tools: [tools.python, tools.c, tools.java, tools.javascript, tools.sql],
     outcomes: [
-      'Completed coursework in distributed systems, modern web development, databases, and software workflows.',
-      'Graduated with a foundation spanning full-stack engineering, algorithms, and production-oriented development.',
+      'Graduated with a foundation in Computer Architecture and Full Stack Engineering.',
+      'Software Development Workflows, Modern Web Development, Databases, Data Structures, Algorithms, Distributed Systems, Operating Systems, Machine Learning, Programming Languages, Computer Architecture.',
     ],
   },
   {
-    period: 'May 2023 - Jan 2024',
+    periodStart: 'May 2023',
+    periodEnd: 'Jan 2024',
     role: 'Junior Full Stack Developer (Non-Profit Project)',
     company: 'Oyate Learning',
     tools: [tools.react, tools.mongodb, tools.nodejs, tools.express, tools.mongoose, tools.redux, tools.python],
-    outcomes: [
-      'Built the Indigenous Database to search and compile Indigenous literature resources for community education.',
-      'Designed and deployed a REST API using MongoDB, Mongoose, and Express, plus a React/Redux frontend.',
-      'Improved API efficiency by reducing overhead data by ~80% and lowering average query time from ~550ms to ~250ms.',
-      'Implemented role-based access control, user authentication, and an automated web-scraper-to-database pipeline.',
+    responsibilities: [
+      'Build the Indigenous Database, a full-stack app for searching and compiling Indigenous literature resources for community education.',
+      'Design and deploy a REST API with MongoDB, Mongoose, and Express, plus a React/Redux frontend.',
+      'Implement role-based access control, user authentication, and an automated web-scraper-to-database pipeline.',
+      'Optimize API performance, cutting overhead data by ~80% and average query time from ~550ms to ~250ms.',
     ],
   },
 ];
@@ -241,8 +296,12 @@ function Timeline() {
       <RollingTitle />
       <TimelineRail>
         {timeline.map((entry, index) => (
-          <TimelineItem key={`${entry.period}-${entry.role}`}>
-            <Period>{entry.period}</Period>
+          <TimelineItem key={entry.role}>
+            <Period>
+              <span>{entry.periodStart}</span>
+              <span>-</span>
+              <span>{entry.periodEnd}</span>
+            </Period>
             <RailCell>
               <Dot />
               {index < timeline.length - 1 ? <Rail /> : null}
@@ -250,20 +309,39 @@ function Timeline() {
             <Card>
               <Role>{entry.role}</Role>
               <Company>{entry.company}</Company>
-              {entry.tools?.length ? (
-                <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
-              ) : null}
-              <OutcomeList>
-                {entry.outcomes.map(outcome => {
-                  const { title, body } = splitOutcome(outcome);
-                  return (
-                    <Outcome key={outcome}>
-                      <OutcomeTitle>{title}</OutcomeTitle>
-                      {body ? <OutcomeBody>{body}</OutcomeBody> : null}
-                    </Outcome>
-                  );
-                })}
-              </OutcomeList>
+              {hasResponsibilities(entry) ? (
+                <>
+                  {entry.tools?.length ? (
+                    <>
+                      <SectionLabel>Technologies</SectionLabel>
+                      <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
+                    </>
+                  ) : null}
+                  <SectionLabel>Responsibilities</SectionLabel>
+                  <ResponsibilityList>
+                    {entry.responsibilities.map(item => (
+                      <Responsibility key={item}>{item}</Responsibility>
+                    ))}
+                  </ResponsibilityList>
+                </>
+              ) : (
+                <>
+                  {entry.tools?.length ? (
+                    <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
+                  ) : null}
+                  <OutcomeList>
+                    {entry.outcomes.map(outcome => {
+                      const { title, body } = splitOutcome(outcome);
+                      return (
+                        <Outcome key={outcome}>
+                          <OutcomeTitle>{title}</OutcomeTitle>
+                          {body ? <OutcomeBody>{body}</OutcomeBody> : null}
+                        </Outcome>
+                      );
+                    })}
+                  </OutcomeList>
+                </>
+              )}
             </Card>
           </TimelineItem>
         ))}
