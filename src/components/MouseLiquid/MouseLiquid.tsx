@@ -143,9 +143,10 @@ const Wrapper = styled.div`
 
 const Canvas = styled.canvas`
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 export type MouseLiquidProps = {
@@ -169,16 +170,24 @@ export type MouseLiquidProps = {
   interactionMarginPx?: number;
 };
 
+/**
+ * Draws `media` centered on a `w`x`h` canvas, covering `coverW`x`coverH` (defaults to `w`x`h`).
+ * Pass a smaller cover size when `w`/`h` include an offscreen margin (e.g. the fluid's
+ * overflow-cell border), so the image's field of view matches the visible area instead of
+ * being zoomed to cover the margin too.
+ */
 function drawMediaCover(
   ctx: CanvasRenderingContext2D,
   media: DefaultMedia,
   w: number,
-  h: number
+  h: number,
+  coverW: number = w,
+  coverH: number = h
 ) {
   const iw = media instanceof HTMLImageElement ? media.naturalWidth : media.videoWidth;
   const ih = media instanceof HTMLImageElement ? media.naturalHeight : media.videoHeight;
   if (!iw || !ih) return;
-  const scale = Math.max(w / iw, h / ih);
+  const scale = Math.max(coverW / iw, coverH / ih);
   const sw = iw * scale;
   const sh = ih * scale;
   const sx = (w - sw) / 2;
@@ -377,6 +386,10 @@ export function MouseLiquid({
     const canvasH = row * CELL_SIZE_PX;
     canvasEl.width = canvasW;
     canvasEl.height = canvasH;
+    // 1:1 bitmap-to-CSS-px mapping so dot size (CELL_SIZE_PX) is identical on every instance;
+    // the overflow-cell margin bleeds past the Wrapper's edges and gets clipped by its `overflow: hidden`.
+    canvasEl.style.width = `${canvasW}px`;
+    canvasEl.style.height = `${canvasH}px`;
 
     // Small luminance buffer: one pixel per sub-cell to minimize getImageData cost
     const lumWidth = col * LUM_SAMPLE_GRID_SIZE;
@@ -569,7 +582,16 @@ export function MouseLiquid({
       // 1) Draw media to small luminance buffer (one pixel per sub-cell) for fast getImageData
       ctxLum.fillStyle = backgroundColor;
       ctxLum.fillRect(0, 0, lumWidth, lumHeight);
-      drawMediaCover(ctxLum, currentMedia, lumWidth, lumHeight);
+      // Cover the visible (inner) area only; the overflow-cell border is just along for the
+      // ride at the same scale, so the media isn't zoomed in to cover the offscreen margin too.
+      drawMediaCover(
+        ctxLum,
+        currentMedia,
+        lumWidth,
+        lumHeight,
+        innerCol * LUM_SAMPLE_GRID_SIZE,
+        innerRow * LUM_SAMPLE_GRID_SIZE
+      );
       let lumData: Uint8ClampedArray;
       try {
         lumData = ctxLum.getImageData(0, 0, lumWidth, lumHeight).data;
@@ -696,13 +718,7 @@ export function MouseLiquid({
 
   return (
     <Wrapper ref={wrapperRef} className={className}>
-      <Canvas
-        ref={canvasRef}
-        style={{
-          position: 'absolute',
-          inset: 0,
-        }}
-      />
+      <Canvas ref={canvasRef} />
     </Wrapper>
   );
 }
