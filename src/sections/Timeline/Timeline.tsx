@@ -2,6 +2,32 @@ import styled from 'styled-components';
 import tools from '@/constants/tools';
 import { RollingText } from '@/components';
 
+type ToolEntry = (typeof tools)[keyof typeof tools];
+
+type JobEntry = {
+  periodStart: string;
+  periodEnd: string;
+  role: string;
+  company: string;
+  tools: ToolEntry[];
+  responsibilities: string[];
+};
+
+type EducationEntry = {
+  periodStart: string;
+  periodEnd: string;
+  role: string;
+  company: string;
+  tools: ToolEntry[];
+  outcomes: string[];
+};
+
+type TimelineEntry = JobEntry | EducationEntry;
+
+function hasResponsibilities(entry: TimelineEntry): entry is JobEntry {
+  return 'responsibilities' in entry;
+}
+
 const Section = styled.section`
   width: 100%;
   display: flex;
@@ -27,9 +53,12 @@ const TimelineRail = styled.ol`
   gap: ${props => props.theme.spacing.xxl};
 `;
 
+const PERIOD_COLUMN_WIDTH = 130;
+
 const TimelineItem = styled.li`
+  position: relative;
   display: grid;
-  grid-template-columns: 180px 24px 1fr;
+  grid-template-columns: ${PERIOD_COLUMN_WIDTH}px 24px 1fr;
   align-items: start;
   column-gap: ${props => props.theme.spacing.lg};
 
@@ -39,47 +68,44 @@ const TimelineItem = styled.li`
   }
 `;
 
-const Period = styled.p`
-  margin: 0;
+const PERIOD_LINE_HEIGHT = 1.3;
+
+const Period = styled.div`
+  display: flex;
+  flex-direction: column;
   padding-top: 2px;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
+  line-height: ${PERIOD_LINE_HEIGHT};
   color: ${props => props.theme.colors.white};
   text-transform: uppercase;
   letter-spacing: 0.08em;
 `;
 
 const RailCell = styled.div`
-  position: relative;
-  min-height: 100%;
-  display: flex;
-  justify-content: center;
-
   @media (max-width: 768px) {
     display: none;
   }
 `;
 
-const Dot = styled.span`
-  width: 12px;
-  height: 12px;
-  margin-top: 6px;
-  border-radius: 50%;
-  border: 1px solid ${props => props.theme.colors.white};
-  background: ${props => props.theme.colors.white};
-  box-shadow: 0 0 20px 1px color-mix(in srgb, ${props => props.theme.colors.theme} 30%, transparent);
-  z-index: 2;
-`;
+/**
+ * Anchored to TimelineItem (not RailCell) so it's aligned under the date column instead of
+ * sitting in the RailCell gutter. Starts right below the (3-line) date text and runs through
+ * the gap to the next date.
+ */
+const RAIL_END_PADDING_PX = 14;
 
 const Rail = styled.span`
   position: absolute;
-  left: 50%;
-  top: 20px;
-  transform: translateX(-50%);
+  left: 0;
+  top: calc(2px + (${props => props.theme.fonts.sizes.sm} * ${PERIOD_LINE_HEIGHT} * 3) + ${RAIL_END_PADDING_PX}px);
+  bottom: calc(${RAIL_END_PADDING_PX}px - ${props => props.theme.spacing.xxl});
   width: 1px;
-  /* Note: calc(-var(--x)) is invalid; use 0px - var(--x) so the line length resolves. */
-  bottom: calc(0px - ${props => props.theme.spacing.xxl} - 4px);
   background: color-mix(in srgb, ${props => props.theme.colors.white} 35%, transparent);
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Card = styled.article`
@@ -103,8 +129,18 @@ const Company = styled.p`
   color: ${props => props.theme.colors.white};
 `;
 
+const SectionLabel = styled.p`
+  margin: ${props => props.theme.spacing.lg} 0 0;
+  font-family: ${props => props.theme.fonts.families.basic};
+  font-size: ${props => props.theme.fonts.sizes.sm};
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: ${props => props.theme.colors.theme};
+`;
+
 const ToolRow = styled.p`
-  margin: ${props => props.theme.spacing.md} 0 0;
+  margin: ${props => props.theme.spacing.sm} 0 0;
   font-family: ${props => props.theme.fonts.families.basic};
   font-size: ${props => props.theme.fonts.sizes.sm};
   letter-spacing: 0.08em;
@@ -112,12 +148,27 @@ const ToolRow = styled.p`
   color: ${props => props.theme.colors.white};
 `;
 
+const ResponsibilityList = styled.ul`
+  margin: ${props => props.theme.spacing.sm} 0 0;
+  padding-left: ${props => props.theme.spacing.lg};
+  display: flex;
+  flex-direction: column;
+  gap: ${props => props.theme.spacing.md};
+`;
+
+const Responsibility = styled.li`
+  font-family: ${props => props.theme.fonts.families.basic};
+  font-size: ${props => props.theme.fonts.sizes.md};
+  color: ${props => props.theme.colors.white};
+  line-height: 1.5;
+`;
+
 const OutcomeList = styled.ul`
   margin: ${props => props.theme.spacing.lg} 0 0;
   padding-left: ${props => props.theme.spacing.lg};
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  gap: ${props => props.theme.spacing.sm};
 `;
 
 const Outcome = styled.li`
@@ -127,28 +178,10 @@ const Outcome = styled.li`
   line-height: 1.5;
 `;
 
-const OutcomeTitle = styled.span`
-  font-weight: 600;
-`;
-
-const OutcomeBody = styled.p`
-  margin: ${props => props.theme.spacing.xs} 0 0;
-  font-weight: 400;
-  list-style: none;
-`;
-
-function splitOutcome(outcome: string): { title: string; body: string | null } {
-  const colonIndex = outcome.indexOf(':');
-  if (colonIndex === -1) return { title: outcome, body: null };
-  return {
-    title: outcome.slice(0, colonIndex).trim(),
-    body: outcome.slice(colonIndex + 1).trim() || null,
-  };
-}
-
-const timeline = [
+const timeline: TimelineEntry[] = [
   {
-    period: 'Aug 2025 - Present',
+    periodStart: 'Aug 2025',
+    periodEnd: 'Present',
     role: 'Full Stack Developer',
     company: 'Everbetter Medicine, LLC',
     tools: [
@@ -160,59 +193,58 @@ const timeline = [
       tools.githubActions,
       tools.jira,
     ],
-    outcomes: [
-      'Microservices Implementation: Used TypeScript, Next.js, and MongoDB to expand a NATS system, shipping features for thousands of users in a multi-tenant platform.',
-      'AI Work Environment: Built an internal tool that transitioned UI development from Figma to an AI-driven React system, cutting cycles from days to hours.',
-      'CI/CD & Release Ownership: Owned mobile app GitHub CI/CD DevOps for 48 engineers, 3 concurrent platform tenants, and 20+ app deployments.',
-      'TypeScript Optimization: Re-architected legacy JavaScript features in TypeScript, reducing API call volume by over 50% for key features.',
-      'Distributed Service Implementation: Used React Native and TypeScript to implement app features connected to a microservices backend.',
-      'Mobile Development: Built out a React-Native application that supports thousands of users.',
-      'OAuth Security: Identified architectural gaps in mobile OAuth implementation, preventing medical data exposure for thousands of users.',
+    responsibilities: [
+      'Develop and ship features across a multi-tenant NATS microservices backend, React frontend, and React Native mobile applications.',
+      'Support mobile CI/CD and DevOps releases.',
+      'Communicate with clients about specific requirements and translate that into existing and new tasks.',
+      'Build internal tooling to support and speed up team development.',
     ],
   },
   {
-    period: 'Mar 2025 - Present',
+    periodStart: 'Mar 2025',
+    periodEnd: 'Present',
     role: 'Freelance Developer',
     company: 'Self-Employed',
     tools: [tools.webflow, tools.framer, tools.figma, tools.react, tools.typescript, tools.python, tools.github],
-    outcomes: [
-      'Built and deployed client websites using React, Framer, and Webflow.',
-      'Created Python automation tools so non-technical stakeholders could manage content and AI scraping workflows.',
-      'Designed UI/UX concepts and prototypes in Figma aligned to business goals and audience needs.',
-      'Delivered written and video documentation for both technical and non-technical maintainers.',
+    responsibilities: [
+      'Build and deploy production client websites using React, Framer, and WebFlow.',
+      'Build Python scripts and write documentation to support website maintenance for non-technical users.',
+      "Design UI/UX concepts according to each client's requirements and preferences.",
     ],
   },
   {
-    period: 'Jan 2025 - Mar 2025',
+    periodStart: 'Jan 2025',
+    periodEnd: 'Mar 2025',
     role: 'Technical Consultant',
     company: 'New Clear Energy USA, Inc.',
     tools: [tools.python, tools.googleWorkspace, tools.framer, tools.figma],
-    outcomes: [
-      'Recovered roughly 3 hours of daily productivity by redesigning calendar and email filtering workflows.',
-      'Restructured email and file systems, then introduced AI-powered task automation into daily operations.',
-      'Advised on UI/UX direction, brand consistency, technical infrastructure, and application architecture.',
+    responsibilities: [
+      'Redesign online workflows to improve technical hygiene and productivity.',
+      'Advise on UI/UX direction, brand consistency, and application architecture.',
     ],
   },
   {
-    period: 'Dec 2024',
+    periodStart: 'Sept 2020',
+    periodEnd: 'Dec 2024',
     role: 'Graduated, B.S. Computer Science',
     company: 'California Polytechnic State University, SLO',
-    tools: [tools.javascript, tools.typescript, tools.java, tools.python],
+    tools: [tools.python, tools.c, tools.java, tools.javascript, tools.sql],
     outcomes: [
-      'Completed coursework in distributed systems, modern web development, databases, and software workflows.',
-      'Graduated with a foundation spanning full-stack engineering, algorithms, and production-oriented development.',
+      'Graduated with a foundation in Computer Architecture and Full Stack Engineering.',
+      'Software Development Workflows, Modern Web Development, Databases, Data Structures, Algorithms, Distributed Systems, Operating Systems, Machine Learning, Programming Languages, Computer Architecture.',
     ],
   },
   {
-    period: 'May 2023 - Jan 2024',
-    role: 'Junior Full Stack Developer (Non-Profit Project)',
+    periodStart: 'May 2023',
+    periodEnd: 'Jan 2024',
+    role: 'Junior Full Stack Developer',
     company: 'Oyate Learning',
     tools: [tools.react, tools.mongodb, tools.nodejs, tools.express, tools.mongoose, tools.redux, tools.python],
-    outcomes: [
-      'Built the Indigenous Database to search and compile Indigenous literature resources for community education.',
-      'Designed and deployed a REST API using MongoDB, Mongoose, and Express, plus a React/Redux frontend.',
-      'Improved API efficiency by reducing overhead data by ~80% and lowering average query time from ~550ms to ~250ms.',
-      'Implemented role-based access control, user authentication, and an automated web-scraper-to-database pipeline.',
+    responsibilities: [
+      'Build the Indigenous Database, an application for compiling and sharing links to Indigenous literature and art for community education.',
+      'Design and deploy a REST API with MongoDB, Mongoose, and Express, plus a React/Redux frontend.',
+      'Implement role-based access control, user authentication, and an automated web-scraper-to-database pipeline.',
+      'Optimize API performance, cutting overhead data by ~80% and average query time from ~550ms to ~250ms.',
     ],
   },
 ];
@@ -240,29 +272,44 @@ function Timeline() {
       <RollingTitle />
       <TimelineRail>
         {timeline.map((entry, index) => (
-          <TimelineItem key={`${entry.period}-${entry.role}`}>
-            <Period>{entry.period}</Period>
-            <RailCell>
-              <Dot />
-              {index < timeline.length - 1 ? <Rail /> : null}
-            </RailCell>
+          <TimelineItem key={entry.role}>
+            {index < timeline.length - 1 ? <Rail /> : null}
+            <Period>
+              <span>{entry.periodStart}</span>
+              <span>-</span>
+              <span>{entry.periodEnd}</span>
+            </Period>
+            <RailCell />
             <Card>
               <Role>{entry.role}</Role>
               <Company>{entry.company}</Company>
-              {entry.tools?.length ? (
-                <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
-              ) : null}
-              <OutcomeList>
-                {entry.outcomes.map(outcome => {
-                  const { title, body } = splitOutcome(outcome);
-                  return (
-                    <Outcome key={outcome}>
-                      <OutcomeTitle>{title}</OutcomeTitle>
-                      {body ? <OutcomeBody>{body}</OutcomeBody> : null}
-                    </Outcome>
-                  );
-                })}
-              </OutcomeList>
+              {hasResponsibilities(entry) ? (
+                <>
+                  {entry.tools?.length ? (
+                    <>
+                      <SectionLabel>Technologies</SectionLabel>
+                      <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
+                    </>
+                  ) : null}
+                  <SectionLabel>Responsibilities</SectionLabel>
+                  <ResponsibilityList>
+                    {entry.responsibilities.map(item => (
+                      <Responsibility key={item}>{item}</Responsibility>
+                    ))}
+                  </ResponsibilityList>
+                </>
+              ) : (
+                <>
+                  {entry.tools?.length ? (
+                    <ToolRow>{entry.tools.map(tool => tool.name).join(' / ')}</ToolRow>
+                  ) : null}
+                  <OutcomeList>
+                    {entry.outcomes.map(outcome => (
+                      <Outcome key={outcome}>{outcome}</Outcome>
+                    ))}
+                  </OutcomeList>
+                </>
+              )}
             </Card>
           </TimelineItem>
         ))}
