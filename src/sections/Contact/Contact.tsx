@@ -10,6 +10,7 @@ const Section = styled.section`
   flex-direction: column;
   align-items: center;
   overflow: hidden;
+  cursor: pointer;
 `;
 
 const BgContainer = styled.div`
@@ -91,6 +92,21 @@ const Tooltip = styled.span<{ $visible: boolean; $x: number; $y: number }>`
   text-align: center;
   opacity: ${props => (props.$visible ? 1 : 0)};
   transition: opacity 160ms ease;
+
+  @media (max-width: 640px) {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    display: block;
+    margin-top: ${props => props.theme.spacing.xs};
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    /* No hover/focus on touch devices — always shown here instead of cursor-gated. */
+    opacity: 1;
+  }
 `;
 
 const CONTACT_SECTION_ID = 'contact';
@@ -118,25 +134,27 @@ function Contact() {
     }
   }
 
-  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setTooltipPos({ x: event.clientX, y: event.clientY });
   }, []);
 
   return (
-    <Section id={CONTACT_SECTION_ID}>
+    <Section
+      id={CONTACT_SECTION_ID}
+      onClick={handleCopyEmail}
+      onMouseEnter={() => setTooltipVisible(true)}
+      onMouseLeave={() => setTooltipVisible(false)}
+      onMouseMove={handleMouseMove}
+      onFocus={() => setTooltipVisible(true)}
+      onBlur={() => setTooltipVisible(false)}
+    >
       <BgContainer>
         <MovingBg image="/bg-1.mp4" overlays={{ top: true }} />
       </BgContainer>
       <Wrapper>
         <TitleButton
           type="button"
-          onClick={handleCopyEmail}
           aria-label={`Copy email ${CONTACT_EMAIL}`}
-          onMouseEnter={() => setTooltipVisible(true)}
-          onMouseLeave={() => setTooltipVisible(false)}
-          onMouseMove={handleMouseMove}
-          onFocus={() => setTooltipVisible(true)}
-          onBlur={() => setTooltipVisible(false)}
         >
           <EmailPart>
             <FancyTitle>{CONTACT_EMAIL_FANCY_PREFIX}</FancyTitle>{CONTACT_EMAIL_LOCAL_REST}
@@ -144,16 +162,16 @@ function Contact() {
           <wbr />
           <EmailPart>{CONTACT_EMAIL_DOMAIN}</EmailPart>
         </TitleButton>
+        <Tooltip
+          role="tooltip"
+          aria-hidden={!tooltipVisible}
+          $visible={tooltipVisible}
+          $x={tooltipPos.x}
+          $y={tooltipPos.y}
+        >
+          Click to Copy
+        </Tooltip>
       </Wrapper>
-      <Tooltip
-        role="tooltip"
-        aria-hidden={!tooltipVisible}
-        $visible={tooltipVisible}
-        $x={tooltipPos.x}
-        $y={tooltipPos.y}
-      >
-        Click to Copy
-      </Tooltip>
     </Section>
   );
 }

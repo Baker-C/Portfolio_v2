@@ -94,7 +94,7 @@ const DEFAULT_OVERLAYS: Required<MovingBgOverlays> = {
 
 function MovingBg({
   image = '/bg-1.mp4',
-  dotColor = theme.colors.theme,
+  dotColor = theme.colors.white,
   backgroundColor = theme.colors.black,
   fadeLiquidOverlay = false,
   overlays: overlaysProp,

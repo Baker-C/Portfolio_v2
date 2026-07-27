@@ -59,6 +59,11 @@ const ACTIVE_SUB_OFFSET_RATIOS = buildSubOffsetRatios(ACTIVE_SUB_GRID_SIZE);
 
 const VIDEO_EXTENSIONS = /\.(webm|mp4|mov|ogg|ogv|m4v)(\?|$)/i;
 
+/** True on mouse/trackpad-driven devices (desktop/laptop); false on touch-primary devices. */
+function supportsHoverPointer(): boolean {
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 function isVideoUrl(url: string): boolean {
   return VIDEO_EXTENSIONS.test(url);
 }
@@ -265,7 +270,7 @@ function getDotSizeRatioFromLuminance(lum: number): number {
 export function MouseLiquid({
   className,
   image,
-  dotColor = theme.colors.theme,
+  dotColor = theme.colors.white,
   backgroundColor = theme.colors.black,
   control: controlProp,
   interactionMarginPx = DEFAULT_POINTER_PROXIMITY_PX,
@@ -542,8 +547,14 @@ export function MouseLiquid({
     const onPointerLeave = () => {
       lastRef.current = null;
     };
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('pointerleave', onPointerLeave);
+    // Touch devices report pointermove during scroll/drag; only wire up the interaction on
+    // hover-capable, fine-pointer (mouse/trackpad) devices so the halftone image still renders
+    // everywhere but the liquid-distortion effect stays a desktop/laptop-only affordance.
+    const canInteract = supportsHoverPointer();
+    if (canInteract) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('pointerleave', onPointerLeave);
+    }
 
     function onFrame(_time: number, deltaTimeMs: number) {
       const fluid = fluidRef.current;
@@ -700,8 +711,10 @@ export function MouseLiquid({
 
     return () => {
       unsubscribe?.();
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerleave', onPointerLeave);
+      if (canInteract) {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerleave', onPointerLeave);
+      }
       fluidStateSnapshotRef.current = {
         col,
         row,

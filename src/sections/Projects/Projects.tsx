@@ -48,7 +48,8 @@ const List = styled.ul`
 
   @media (max-width: 640px) {
     padding: 0 ${props => props.theme.spacing.md};
-    gap: ${props => props.theme.spacing.xl};
+    /* Wider than xl so stacked mobile cards read as clearly separate. */
+    gap: 3rem;
   }
 `;
 
@@ -57,20 +58,25 @@ const ProjectCard = styled.li`
   flex-direction: column;
   background: linear-gradient(145deg, rgba(18, 18, 20, 0.88), rgba(7, 7, 10, 0.88));
   border: 1px solid ${props => props.theme.colors.theme};
-  padding: ${props => props.theme.spacing.lg};
+  padding: 0;
   transition: border-color 220ms ease;
+
+  @media (min-width: 900px) {
+    padding: ${props => props.theme.spacing.lg};
+  }
 `;
 
 const ProjectInner = styled.div`
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: ${props => props.theme.spacing.xl};
+  gap: ${props => props.theme.spacing.md};
 
   @media (min-width: 900px) {
     display: grid;
     grid-template-columns: 1fr 2fr;
     align-items: stretch;
+    gap: ${props => props.theme.spacing.xl};
   }
 `;
 
@@ -80,9 +86,11 @@ const ImageColumn = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 280px;
+  height: 280px;
 
   @media (min-width: 900px) {
     min-height: 320px;
+    height: auto;
   }
 `;
 
@@ -92,6 +100,11 @@ const InfoColumn = styled.div`
   flex-direction: column;
   justify-content: center;
   gap: ${props => props.theme.spacing.lg};
+  padding: ${props => props.theme.spacing.lg};
+
+  @media (min-width: 900px) {
+    padding: 0;
+  }
 `;
 
 const ProjectTitle = styled.h2`
@@ -113,8 +126,8 @@ const CardImageFrame = styled.div`
   position: relative;
   width: auto;
   max-width: 100%;
-  margin-left: ${props => props.theme.spacing.xs};
-  margin-right: ${props => props.theme.spacing.xs};
+  margin-left: 0;
+  margin-right: 0;
   flex: 1;
   height: auto;
   min-height: 280px;
@@ -124,6 +137,8 @@ const CardImageFrame = styled.div`
 
   @media (min-width: 900px) {
     min-height: 320px;
+    margin-left: ${props => props.theme.spacing.xs};
+    margin-right: ${props => props.theme.spacing.xs};
   }
 `;
 
@@ -343,7 +358,6 @@ function RollingTitle() {
 
 function liquidProps() {
   return {
-    dotColor: theme.colors.theme,
     backgroundColor: theme.colors.black,
     control: {
       options: {
