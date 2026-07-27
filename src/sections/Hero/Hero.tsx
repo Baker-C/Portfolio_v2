@@ -232,26 +232,18 @@ const StyledSwirlyArrow = styled(SwirlyArrow)`
   transform:
     rotate(0deg)
     translate(80%, -30%);
-  transition: transform 0.8s ease-out;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    transform:
-      rotate(4deg)
-      translate(75%, -29%)
-      scale(1.05);
+    opacity: 1;
   }
 
   @media (max-width: 768px) {
     transform: rotate(0deg)
       translate(calc(45% + 25px), calc(-20% - 40px))
       scale(0.42);
-
-    &:hover {
-      transform: rotate(4deg)
-        translate(calc(42% + 27px), calc(-18% - 50px))
-        scale(0.44);
-    }
   }
 
   /* Flex column: size the layout box — transform scale() still reserves the full 300px SVG box. */
@@ -273,10 +265,6 @@ const StyledSwirlyArrow = styled(SwirlyArrow)`
       width: 100% !important;
       height: 100% !important;
       display: block;
-    }
-
-    &:hover {
-      transform: rotate(4deg) scale(1.04);
     }
   }
 `;

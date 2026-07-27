@@ -60,10 +60,6 @@ const ProjectCard = styled.li`
   border: 1px solid ${props => props.theme.colors.theme};
   padding: 0;
   transition: border-color 220ms ease;
-
-  @media (min-width: 900px) {
-    padding: ${props => props.theme.spacing.lg};
-  }
 `;
 
 const ProjectInner = styled.div`
@@ -101,10 +97,6 @@ const InfoColumn = styled.div`
   justify-content: center;
   gap: ${props => props.theme.spacing.lg};
   padding: ${props => props.theme.spacing.lg};
-
-  @media (min-width: 900px) {
-    padding: 0;
-  }
 `;
 
 const ProjectTitle = styled.h2`
@@ -137,16 +129,7 @@ const CardImageFrame = styled.div`
 
   @media (min-width: 900px) {
     min-height: 320px;
-    margin-left: ${props => props.theme.spacing.xs};
-    margin-right: ${props => props.theme.spacing.xs};
   }
-`;
-
-const CardImageOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.5));
 `;
 
 const StackRow = styled.p`
@@ -378,7 +361,6 @@ function ProjectRow({ project }: { project: Project }) {
         <ImageColumn>
           <CardImageFrame>
             <MouseLiquid image={project.image} {...liquid} />
-            <CardImageOverlay />
           </CardImageFrame>
         </ImageColumn>
         <InfoColumn>

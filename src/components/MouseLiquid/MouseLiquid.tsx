@@ -317,8 +317,10 @@ export function MouseLiquid({
     return () => observer.disconnect();
   }, []);
 
-  const innerCol = Math.max(1, Math.floor(width / CELL_SIZE_PX));
-  const innerRow = Math.max(1, Math.floor(height / CELL_SIZE_PX));
+  // Ceil (not floor): the inner grid must be at least as large as the measured wrapper size,
+  // or drawMediaCover's cover-scale target undershoots the real visible area by up to one cell.
+  const innerCol = Math.max(1, Math.ceil(width / CELL_SIZE_PX));
+  const innerRow = Math.max(1, Math.ceil(height / CELL_SIZE_PX));
   const col = innerCol + 2 * OVERFLOW_CELLS;
   const row = innerRow + 2 * OVERFLOW_CELLS;
   const gridSize = { col, row };
